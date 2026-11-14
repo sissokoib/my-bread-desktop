@@ -10,6 +10,7 @@
     "electron:dev": "wait-on http-get://localhost:4200 && electron .",
     "desktop:run": "npm run build && electron .",
     "desktop:dist": "npm run build && electron-builder --win nsis",
+    "desktop:publish": "npm run build && electron-builder --win nsis --publish always",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -45,7 +46,7 @@
       {
         "provider": "github",
         "owner": "sissokoib",
-        "repo": "my-bread"
+        "repo": "my-bread-desktop"
       }
     ],
     "directories": {
