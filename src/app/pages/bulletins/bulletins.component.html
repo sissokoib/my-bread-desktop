@@ -1,0 +1,528 @@
+<div class="bulletin-no-print">
+      <!-- En-tête de la page -->
+      <div class="page-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem">
+            <span style="font-size: 1.5rem">📜</span>
+            <h1 style="margin: 0">Bulletins de Décompte &amp; Livraisons</h1>
+          </div>
+          <p class="page-sub">
+            Format officiel épuré avec déduction des retours, calcul des ventes réelles et filigrane officiel.
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center">
+          <button type="button" class="btn-primary" (click)="ouvrirModalRetour()">
+            🔄 Enregistrer un retour livreur
+          </button>
+          <button type="button" class="btn-secondary" (click)="ouvrirModalInvenduFournil()">
+            🍞 Noter un invendu au fournil
+          </button>
+          <button type="button" class="btn-secondary" (click)="telechargerImage()" [disabled]="enCoursExport()" title="Télécharger le bulletin au format image PNG haute résolution">
+            🖼️ {{ enCoursExport() ? 'Génération...' : 'Image PNG' }}
+          </button>
+          <button type="button" class="btn-primary" (click)="telechargerPDF()" [disabled]="enCoursExportPdf()" title="Télécharger le bulletin officiel au format PDF">
+            📄 {{ enCoursExportPdf() ? 'Génération PDF...' : 'Télécharger PDF' }}
+          </button>
+          <button type="button" class="btn-secondary" (click)="imprimerBulletin()" title="Lancer l'impression directe">
+            🖨️ Imprimer
+          </button>
+        </div>
+      </div>
+
+      <!-- Alertes & Notifications -->
+      @if (erreur()) {
+        <div class="alert alert-error">{{ erreur() }}</div>
+      }
+      @if (notificationSucces()) {
+        <div class="alert alert-success" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 0.85rem 1.15rem; border-radius: 12px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center">
+          <span>✅ {{ notificationSucces() }}</span>
+          <button type="button" style="background: none; border: none; cursor: pointer; color: #065F46; font-weight: bold" (click)="notificationSucces.set(null)">✕</button>
+        </div>
+      }
+
+      <!-- ==============================================================
+           BARRE DE FILTRES : PÉRIODE ET LIVREUR
+           ============================================================== -->
+      <div class="card" style="margin-bottom: 1.25rem">
+        <div class="filtres-bulletin-grid">
+          <!-- Filtre Type de Période -->
+          <div class="filtre-group">
+            <label class="filtre-label">Période temporelle</label>
+            <div class="period-pills">
+              <button
+                type="button"
+                class="period-pill"
+                [class.is-active]="typePeriode() === 'JOURNALIER'"
+                (click)="changerTypePeriode('JOURNALIER')"
+              >
+                Journalier
+              </button>
+              <button
+                type="button"
+                class="period-pill"
+                [class.is-active]="typePeriode() === 'SEMAINE'"
+                (click)="changerTypePeriode('SEMAINE')"
+              >
+                Semaine
+              </button>
+              <button
+                type="button"
+                class="period-pill"
+                [class.is-active]="typePeriode() === 'MENSUEL'"
+                (click)="changerTypePeriode('MENSUEL')"
+              >
+                Mensuel
+              </button>
+              <button
+                type="button"
+                class="period-pill"
+                [class.is-active]="typePeriode() === 'ANNUEL'"
+                (click)="changerTypePeriode('ANNUEL')"
+              >
+                Annuel
+              </button>
+            </div>
+          </div>
+
+          <!-- Choix précis de la date selon la période -->
+          <div class="filtre-group">
+            @switch (typePeriode()) {
+              @case ('JOURNALIER') {
+                <label class="filtre-label" for="dateChoisie">Date du jour</label>
+                <input
+                  id="dateChoisie"
+                  type="date"
+                  [(ngModel)]="dateJournaliere"
+                  class="filtre-input"
+                />
+              }
+              @case ('SEMAINE') {
+                <label class="filtre-label" for="semaineChoisie">Semaine</label>
+                <input
+                  id="semaineChoisie"
+                  type="week"
+                  [(ngModel)]="semaineChoisie"
+                  class="filtre-input"
+                />
+              }
+              @case ('MENSUEL') {
+                <label class="filtre-label" for="moisChoisi">Mois</label>
+                <input
+                  id="moisChoisi"
+                  type="month"
+                  [(ngModel)]="moisChoisi"
+                  class="filtre-input"
+                />
+              }
+              @case ('ANNUEL') {
+                <label class="filtre-label" for="anneeChoisie">Année</label>
+                <select id="anneeChoisie" [(ngModel)]="anneeChoisie" class="filtre-input">
+                  <option [ngValue]="2024">2024</option>
+                  <option [ngValue]="2025">2025</option>
+                  <option [ngValue]="2026">2026</option>
+                  <option [ngValue]="2027">2027</option>
+                </select>
+              }
+            }
+          </div>
+
+          <!-- Filtre par Livreur -->
+          <div class="filtre-group">
+            <label class="filtre-label" for="livreurFiltre">Livreur</label>
+            <select
+              id="livreurFiltre"
+              [ngModel]="livreurFiltreId()"
+              (ngModelChange)="livreurFiltreId.set($event)"
+              class="filtre-input"
+            >
+              <option [ngValue]="null">Tous les livreurs</option>
+              @for (liv of livreurs(); track liv.id) {
+                <option [ngValue]="liv.id">
+                  {{ liv.nom }} ({{ liv.telephone }})
+                </option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==============================================================
+         ZONE IMPRIMABLE ET EXPORTABLE : LA FACTURE DE DÉCOMPTE OFFICIELLE
+         STYLE GRAPHIQUE PROFESSIONNEL (INSPIRÉ DE LA MAQUETTE DESIGNER)
+         AVEC FILIGRANE DU PAIN & MOTIFS GÉOMÉTRIQUES AUX COULEURS MY BREAD
+         ============================================================== -->
+    <div #bulletinFiche id="bulletin-print-zone" class="invoice-sheet">
+      <!-- COURBURES GÉOMÉTRIQUES D'ANGLE (STYLE MAQUETTE AVEC TEINTES ADOUCIES) -->
+      <svg class="inv-corner-tr" viewBox="0 0 280 120" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="0" y="0" width="280" height="6" fill="#DEAB38" />
+        <path d="M120 0 C 180 30, 200 95, 280 95 L 280 0 Z" fill="#3D271D" />
+        <path d="M165 0 C 205 25, 230 70, 280 70 L 280 0 Z" fill="#C99426" />
+      </svg>
+
+      <svg class="inv-corner-bl" viewBox="0 0 280 120" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="0" y="114" width="280" height="6" fill="#DEAB38" />
+        <path d="M0 120 L 0 25 C 80 25, 100 90, 160 120 Z" fill="#3D271D" />
+        <path d="M0 120 L 0 50 C 50 50, 75 95, 115 120 Z" fill="#C99426" />
+      </svg>
+
+      <!-- FILIGRANE : PHOTO DU PAIN EN RELIEF + NOM DE LA BOULANGERIE AU CENTRE -->
+      <div class="sheet-watermark-container" aria-hidden="true">
+        <img src="images/pain-3d.png" alt="" class="sheet-watermark-logo" />
+        <div class="sheet-watermark-text">{{ boulangerieNom() }}</div>
+      </div>
+
+      <!-- EN-TÊTE ÉLÉGANT AVEC MARQUE ET TITRE DU BULLETIN -->
+      <div class="inv-top-row">
+        <div class="inv-brand-wrapper">
+          <div class="inv-logo-badge">
+            <img src="images/pain-3d.png" alt="Logo Pain" class="inv-logo-img" />
+          </div>
+          <div class="inv-brand-info">
+            <h1 class="inv-brand-name">{{ boulangerieNom() }}</h1>
+            <span class="inv-brand-tagline">FOURNIL &amp; DISTRIBUTION ARTISANALE</span>
+          </div>
+        </div>
+
+        <div class="inv-title-col">
+          <div class="inv-hero-title">BULLETIN</div>
+          <div class="inv-meta-grid">
+            <div class="inv-meta-item">
+              <span class="meta-label">Bulletin N°</span>
+              <strong class="meta-val">{{ referenceBulletin() }}</strong>
+            </div>
+            <div class="inv-meta-item">
+              <span class="meta-label">Date</span>
+              <strong class="meta-val">{{ dateEdition() }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BANDEAU DESTINATAIRE / LIVREUR -->
+      <div class="inv-party-grid">
+        <div class="inv-bill-to">
+          <span class="bill-to-label">Destinataire / Livreur :</span>
+          <div class="bill-to-name">{{ libelleLivreurSelectionne() }}</div>
+          <div class="bill-to-sub">Chauffeur-Livreur • Point de vente certifié</div>
+          <div class="bill-to-period"><strong>Période concernée :</strong> {{ libellePeriodeActive() }}</div>
+        </div>
+        <div class="inv-status-col">
+          <span class="inv-status-tag" [class.is-ok]="reliquatGlobal() === 0" [class.is-due]="reliquatGlobal() > 0">
+            {{ reliquatGlobal() === 0 ? '✔️ DÉCOMPTE SOLDÉ (0 FCFA)' : '⚠️ SOLDE À RECOUVRER' }}
+          </span>
+          <div class="inv-status-sub">{{ libellePeriodeActive() }}</div>
+        </div>
+      </div>
+
+      <!-- TABLEAU QUADRILLÉ STYLE GRAPHIQUE PROFESSIONNEL (SANS 1. 2. 3.) -->
+      <table class="inv-designer-table">
+        <thead>
+          <tr>
+            <th style="width: 44px; text-align: center">N°</th>
+            <th>Date de livraison</th>
+            <th class="num">Pains Sortis</th>
+            <th class="num">Retours Déduits</th>
+            <th class="num">Pains Facturés</th>
+            <th class="num">Montant Total</th>
+            <th class="num">Montant Versé</th>
+            <th class="num">Solde Dû</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of lignesFiltrees(); track l.tourneeId; let i = $index) {
+            <tr>
+              <td style="text-align: center; color: #6B7280; font-weight: 600">
+                {{ (i + 1) < 10 ? ('0' + (i + 1)) : (i + 1) }}
+              </td>
+              <td>
+                <strong>{{ l.dateTournee }}</strong>
+                <span style="font-size: 0.74rem; color: #6B7280; display: block">{{ l.livreurNom }}</span>
+              </td>
+              <td class="num">{{ l.quantiteChargee | number }}</td>
+              <td class="num text-amber">
+                {{ l.quantiteRetournee > 0 ? ('-' + (l.quantiteRetournee | number)) : '0' }}
+              </td>
+              <td class="num text-success">
+                <strong>{{ l.quantiteVendue | number }}</strong>
+              </td>
+              <td class="num">{{ l.montantTotalVentes | number }} FCFA</td>
+              <td class="num text-success">{{ l.montantTotalEncaisse | number }} FCFA</td>
+              <td class="num" [style.color]="l.reliquatRestant > 0 ? '#DC2626' : '#059669'">
+                <strong>{{ l.reliquatRestant | number }} FCFA</strong>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="empty-row">Aucune livraison répertoriée pour cette sélection.</td>
+            </tr>
+          }
+        </tbody>
+        @if (lignesFiltrees().length > 0) {
+          <tfoot>
+            <tr class="inv-table-tfoot">
+              <td colspan="2" style="text-align: right"><strong>TOTAL GÉNÉRAL :</strong></td>
+              <td class="num"><strong>{{ totalPainsCharges() | number }}</strong></td>
+              <td class="num text-amber"><strong>- {{ totalPainsRetournesLivreurs() | number }}</strong></td>
+              <td class="num text-success"><strong>{{ totalPainsVendus() | number }}</strong></td>
+              <td class="num"><strong>{{ montantNetVentes() | number }} FCFA</strong></td>
+              <td class="num text-success"><strong>{{ montantTotalVerse() | number }} FCFA</strong></td>
+              <td class="num" [style.color]="reliquatGlobal() > 0 ? '#DC2626' : '#059669'">
+                <strong>{{ reliquatGlobal() | number }} FCFA</strong>
+              </td>
+            </tr>
+          </tfoot>
+        }
+      </table>
+
+      <!-- BAS DE BULLETIN : RÈGLEMENTS À GAUCHE & SYNTHÈSE DESIGNER À DROITE -->
+      <div class="inv-designer-bottom">
+        <div class="inv-payment-info-box">
+          <div class="pay-info-title">Modes de règlement &amp; traçabilité :</div>
+          <div class="pay-methods">
+            <span class="pay-chip pay-chip-especes">
+              <img src="images/paiements/especes.svg" alt="Espèces" class="pay-logo-img" />
+              <span>Espèces</span>
+            </span>
+            <span class="pay-chip wave">
+              <img src="images/paiements/wave.png" alt="Wave" class="pay-logo-img" />
+              <span>Wave</span>
+            </span>
+            <span class="pay-chip om">
+              <img src="images/paiements/orange-money.png" alt="Orange Money" class="pay-logo-img" />
+              <span>Orange Money</span>
+            </span>
+            <span class="pay-chip moov">
+              <img src="images/paiements/moov-money.png" alt="Moov Money" class="pay-logo-img" />
+              <span>Moov</span>
+            </span>
+          </div>
+          <div class="pay-notice">
+            Les invendus rapportés au fournil ont été intégralement déduits. Le montant net reflète fidèlement les pains réellement vendus.
+          </div>
+        </div>
+
+        <div class="inv-designer-summary">
+          <div class="sum-row">
+            <span>Sous-total Ventes Réelles :</span>
+            <strong>{{ montantNetVentes() | number }} FCFA</strong>
+          </div>
+          <div class="sum-row">
+            <span>Total Encaissé en Caisse :</span>
+            <strong style="color: #059669">{{ montantTotalVerse() | number }} FCFA</strong>
+          </div>
+          <div class="sum-total-dark">
+            <span class="sum-total-label">NET À PAYER (SOLDE) :</span>
+            <span class="sum-total-val" [style.color]="reliquatGlobal() > 0 ? '#F4C542' : '#34D399'">
+              {{ reliquatGlobal() | number }} FCFA
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PIED DE PAGE AVEC COORDONNÉES DE CONTACT -->
+      <div class="inv-designer-footer">
+        <div class="inv-contact-items">
+          <span class="inv-contact-item">📞 +223 60 79 75 75</span>
+          <span class="inv-contact-item">📍 Badalabougou, Bamako</span>
+          <span class="inv-contact-item">✉️ contact@mybread.ml</span>
+          <span class="inv-contact-item">🌐 www.mybread.ml</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==============================================================
+         MODAL 1 : ENREGISTRER UN RETOUR DE LIVREUR
+         ============================================================== -->
+    @if (modalRetourOuvert()) {
+      <div class="backdrop" (click)="modalRetourOuvert.set(false)">
+        <form class="dialog modal-box" (click)="$event.stopPropagation()" (ngSubmit)="validerRetourLivreur()">
+          <div class="dialog-header">
+            <div>
+              <h2 style="margin: 0; font-size: 1.25rem">Enregistrer un retour de livreur</h2>
+              <p class="field-hint" style="margin: 0.2rem 0 0 0">
+                Les pains retournés invendus ou abîmés seront déduits de son chargement (non facturés).
+              </p>
+            </div>
+            <button type="button" class="btn-secondary btn-sm" (click)="modalRetourOuvert.set(false)">✕</button>
+          </div>
+
+          @if (erreurModal()) {
+            <div class="alert alert-error">{{ erreurModal() }}</div>
+          }
+
+          <div class="field">
+            <label for="livreurModalSelect">Livreur concerné *</label>
+            <select
+              id="livreurModalSelect"
+              [(ngModel)]="retourForm.livreurId"
+              name="livreurId"
+              (ngModelChange)="auChangementLivreurRetour($event)"
+              required
+            >
+              <option [ngValue]="null" disabled>Sélectionner le livreur...</option>
+              @for (liv of livreurs(); track liv.id) {
+                <option [ngValue]="liv.id">{{ liv.nom }} ({{ liv.telephone }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="tourneeModalSelect">Livraison de pains concernée *</label>
+            <select
+              id="tourneeModalSelect"
+              [(ngModel)]="retourForm.tourneeId"
+              name="tourneeId"
+              (ngModelChange)="auChangementTourneeRetour($event)"
+              required
+            >
+              <option [ngValue]="null" disabled>Sélectionner la livraison...</option>
+              @for (t of tourneesDuLivreurModal(); track t.id) {
+                <option [ngValue]="t.id">
+                  Livraison du {{ t.dateTournee }} ({{ t.statut === 'CLOTUREE' ? 'Soldée' : 'En cours' }})
+                </option>
+              }
+            </select>
+          </div>
+
+          @if (saisiesRetourModal().length > 0) {
+            <div class="table-wrap" style="margin-top: 1rem">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Produit</th>
+                    <th class="num">Chargé</th>
+                    <th class="num">Retourné</th>
+                    <th class="num">Vendu Facturé</th>
+                    <th>Motif</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (s of saisiesRetourModal(); track s.produitId) {
+                    <tr>
+                      <td><strong>{{ s.produitNom }}</strong></td>
+                      <td class="num">{{ s.quantiteChargee }}</td>
+                      <td class="num">
+                        <input
+                          type="number"
+                          min="0"
+                          [max]="s.quantiteChargee"
+                          [(ngModel)]="s.quantiteRetournee"
+                          [name]="'ret_' + s.produitId"
+                          style="width: 80px; text-align: right; padding: 0.35rem"
+                        />
+                      </td>
+                      <td class="num" style="color: #059669; font-weight: 800">
+                        {{ calculerVendu(s.quantiteChargee, s.quantiteRetournee) }}
+                      </td>
+                      <td>
+                        <select [(ngModel)]="s.motif" [name]="'mot_' + s.produitId" style="padding: 0.35rem; font-size: 0.8rem">
+                          <option value="INVENDU">Invendu</option>
+                          <option value="ABIME">Abîmé</option>
+                          <option value="PERTE">Perte</option>
+                        </select>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+
+          <div class="dialog-footer">
+            <button type="button" class="btn-secondary" (click)="modalRetourOuvert.set(false)">Annuler</button>
+            <button
+              type="submit"
+              class="btn-primary"
+              [disabled]="enCoursAction() || !retourForm.tourneeId"
+            >
+              {{ enCoursAction() ? 'Enregistrement...' : 'Valider & Déduire de la Facture' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- ==============================================================
+         MODAL 2 : NOTER UN INVENDU AU FOURNIL (BOUTIQUE)
+         ============================================================== -->
+    @if (modalInvenduFournilOuvert()) {
+      <div class="backdrop" (click)="modalInvenduFournilOuvert.set(false)">
+        <form class="dialog modal-box" (click)="$event.stopPropagation()" (ngSubmit)="validerInvenduFournil()">
+          <div class="dialog-header">
+            <div>
+              <h2 style="margin: 0; font-size: 1.25rem">Noter un pain invendu au fournil</h2>
+              <p class="field-hint" style="margin: 0.2rem 0 0 0">
+                Pains restés invendus directement à la boulangerie / vitrine.
+              </p>
+            </div>
+            <button type="button" class="btn-secondary btn-sm" (click)="modalInvenduFournilOuvert.set(false)">✕</button>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="dateInvendu">Date *</label>
+              <input
+                id="dateInvendu"
+                type="date"
+                name="date"
+                [(ngModel)]="formInvendu.date"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="produitInvendu">Pain *</label>
+              <select
+                id="produitInvendu"
+                name="produitId"
+                [(ngModel)]="formInvendu.produitId"
+                required
+              >
+                <option [ngValue]="null" disabled>Choisir le pain...</option>
+                @for (p of produits(); track p.id) {
+                  <option [ngValue]="p.id">{{ p.nom }} ({{ p.prixVente }} FCFA)</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="quantiteInvendue">Quantité invendue *</label>
+              <input
+                id="quantiteInvendue"
+                type="number"
+                min="1"
+                name="quantite"
+                [(ngModel)]="formInvendu.quantite"
+                placeholder="Ex: 15"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="motifInvendu">Motif *</label>
+              <select id="motifInvendu" name="motif" [(ngModel)]="formInvendu.motif" required>
+                <option value="FIN_DE_JOURNEE">Fin de journée (Non écoulé)</option>
+                <option value="SURPLUS_PRODUCTION">Surplus de fournée</option>
+                <option value="DEFECTUEUX">Défaut de cuisson / Abîmé</option>
+                <option value="AUTRE">Autre raison</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dialog-footer">
+            <button type="button" class="btn-secondary" (click)="modalInvenduFournilOuvert.set(false)">Annuler</button>
+            <button
+              type="submit"
+              class="btn-primary"
+              [disabled]="!formInvendu.produitId || formInvendu.quantite <= 0"
+            >
+              Enregistrer l'invendu
+            </button>
+          </div>
+        </form>
+      </div>
+    }

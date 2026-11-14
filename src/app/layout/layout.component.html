@@ -1,0 +1,80 @@
+<div class="shell">
+  <!-- 1. SIDEBAR DÉPARTAGÉE -->
+  <app-sidebar></app-sidebar>
+
+  <!-- 2. CANVAS PRINCIPAL -->
+  <div class="main-canvas">
+    <!-- HEADER DÉPARTAGÉ -->
+    <app-header></app-header>
+
+    <!-- Bandeaux d'état d'abonnement SaaS partagés -->
+    @if (abonnementExpire()) {
+      <div
+        style="
+          background: linear-gradient(90deg, #FEE2E2 0%, #FEF2F2 100%);
+          border: 1px solid #FECACA;
+          color: #991B1B;
+          padding: 0.85rem 1.4rem;
+          margin: 1.25rem 2rem 0 2rem;
+          border-radius: 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 1rem;
+          flex-wrap: wrap;
+          box-shadow: 0 4px 12px rgba(153, 27, 27, 0.08);
+        "
+      >
+        <div>
+          <div style="font-weight: 800; font-size: 0.95rem">
+            ⚠️ Période d'essai terminée / Abonnement arrivé à échéance
+          </div>
+          <div style="font-size: 0.84rem; margin-top: 0.2rem">
+            Pour continuer à enregistrer vos fournées et tournées, veuillez contacter l'administrateur au
+            <strong>{{ utilisateur()?.contactCommercial || '+223 70 00 00 00' }}</strong> pour renouveler manuellement votre accès.
+          </div>
+        </div>
+        <a
+          href="tel:+22370000000"
+          class="btn-primary btn-sm"
+          style="background: #991B1B; color: #FFFFFF; text-decoration: none"
+        >
+          📞 Appeler pour Renouveler
+        </a>
+      </div>
+    } @else if (enEssaiGratuit()) {
+      <div
+        style="
+          background: #FEF3C7;
+          border: 1px solid #FDE68A;
+          color: #92400E;
+          padding: 0.65rem 1.4rem;
+          margin: 1rem 2rem 0 2rem;
+          border-radius: 10px;
+          font-size: 0.83rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 0.6rem;
+        "
+      >
+        <span>
+          ★ <strong>Période d'essai gratuit</strong> : il vous reste
+          <strong>{{ utilisateur()?.joursRestantsAbonnement }} jour(s)</strong> pour tester toutes les fonctionnalités.
+        </span>
+        <span style="font-weight: 600; font-size: 0.8rem">
+          Assistance & Renouvellement : {{ utilisateur()?.contactCommercial || '+223 70 00 00 00' }}
+        </span>
+      </div>
+    }
+
+    <!-- 3. MAIN (CONTENU PRINCIPAL VIA ROUTER-OUTLET) -->
+    <main class="content-area">
+      <router-outlet></router-outlet>
+    </main>
+
+    <!-- 4. FOOTER DÉPARTAGÉ -->
+    <app-footer></app-footer>
+  </div>
+</div>

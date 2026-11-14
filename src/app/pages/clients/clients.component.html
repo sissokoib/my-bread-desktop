@@ -1,0 +1,125 @@
+<div class="page-header">
+      <div>
+        <h1>Clients (boutiquiers)</h1>
+        <p class="page-sub">Boutiques livrées par la boulangerie, plafonds de crédit et tarifs</p>
+      </div>
+      <button type="button" class="btn-primary" (click)="ouvrirCreation()">
+        + Nouveau boutiquier
+      </button>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    <div class="card">
+      <div class="toolbar">
+        <input
+          type="search"
+          placeholder="Boutique, responsable ou téléphone…"
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+          style="min-width: 260px"
+        />
+
+        <select [ngModel]="zoneFiltre()" (ngModelChange)="zoneFiltre.set($event)">
+          <option [ngValue]="null">Toutes les zones</option>
+          @for (z of zones(); track z.id) {
+            <option [ngValue]="z.id">{{ z.nom }}</option>
+          }
+        </select>
+
+        <label class="checkbox-line">
+          <input
+            type="checkbox"
+            [ngModel]="actifsSeulement()"
+            (ngModelChange)="actifsSeulement.set($event)"
+          />
+          Actifs seulement
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Boutique</th>
+              <th>Responsable</th>
+              <th>Téléphone</th>
+              <th>Zone</th>
+              <th class="num">Plafond crédit</th>
+              <th>Statut</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of clientsFiltres(); track c.id) {
+              <tr>
+                <td>
+                  <strong>{{ c.nomBoutique }}</strong>
+                  @if (c.adresse) {
+                    <div class="field-hint">{{ c.adresse }}</div>
+                  }
+                </td>
+                <td>{{ c.nomResponsable || '—' }}</td>
+                <td>{{ c.telephone }}</td>
+                <td>
+                  @if (c.zoneNom) {
+                    <span class="badge badge-accent">{{ c.zoneNom }}</span>
+                  } @else {
+                    <span class="field-hint">—</span>
+                  }
+                </td>
+                <td class="num">
+                  @if (c.plafondCredit !== null) {
+                    {{ c.plafondCredit | number }} FCFA
+                  } @else {
+                    <span class="field-hint">Sans limite</span>
+                  }
+                </td>
+                <td>
+                  @if (c.actif) {
+                    <span class="badge badge-ok">Actif</span>
+                  } @else {
+                    <span class="badge badge-muted">Inactif</span>
+                  }
+                </td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="btn-secondary btn-sm"
+                    (click)="clientTarifs.set(c)"
+                  >
+                    Tarifs
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-secondary btn-sm"
+                    (click)="ouvrirEdition(c)"
+                  >
+                    Modifier
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty">Aucun boutiquier correspondant.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    @if (dialogOuvert()) {
+      <app-client-dialog
+        [client]="clientSelectionne()"
+        [zones]="zones()"
+        (fermer)="dialogOuvert.set(false)"
+        (enregistre)="apresEnregistrement()"
+      />
+    }
+
+    @if (clientTarifs(); as ct) {
+      <app-prix-client-dialog [client]="ct" (fermer)="clientTarifs.set(null)" />
+    }

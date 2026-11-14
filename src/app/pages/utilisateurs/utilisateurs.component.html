@@ -1,0 +1,235 @@
+<div class="page-header">
+      <div>
+        <h1>Équipe &amp; Employés</h1>
+        <p class="page-sub">
+          Gestion du personnel, salaires (quinzaine / mensuel), rations journalières et retenues sur les gardes manquées
+        </p>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn-primary" (click)="dialogNouvelEmploye.set(true)">
+          + Nouvel Employé
+        </button>
+      </div>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    <!-- Grille des statistiques du personnel et de la paie -->
+    <div class="stats-grid">
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Total Effectif</div>
+            <div class="stat-value">{{ utilisateurs().length }}</div>
+          </div>
+          <div class="stat-icon-wrapper" title="Personnel de la boulangerie">
+            <span class="material-symbols-outlined">badge</span>
+          </div>
+        </div>
+        <div class="stat-hint">{{ nbLivreurs() }} livreur(s) · {{ nbBoulangers() }} employé(s) fournil</div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Masse Salariale Base</div>
+            <div class="stat-value" style="color: var(--primary-dark)">
+              {{ totalSalairesBase() | number }} F
+            </div>
+          </div>
+          <div class="stat-icon-wrapper gold" title="Masse salariale de référence">
+            <span class="material-symbols-outlined">payments</span>
+          </div>
+        </div>
+        <div class="stat-hint">Cumul des salaires contractuels de base</div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Retenues Gardes Manquées</div>
+            <div class="stat-value" style="color: #DC2626">
+              -{{ totalDeductionsGlobales() | number }} F
+            </div>
+          </div>
+          <div class="stat-icon-wrapper warning" title="Total des déductions d'absences">
+            <span class="material-symbols-outlined">event_busy</span>
+          </div>
+        </div>
+        <div class="stat-hint">{{ totalAbsencesGlobales() }} absence(s) déduite(s) automatiquement</div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Net Salaires à Régler</div>
+            <div class="stat-value" style="color: #059669">
+              {{ totalSalairesNets() | number }} F
+            </div>
+          </div>
+          <div class="stat-icon-wrapper green" title="Salaires nets calculés">
+            <span class="material-symbols-outlined">account_balance_wallet</span>
+          </div>
+        </div>
+        <div class="stat-hint">Base déduite des absences constatées</div>
+      </div>
+    </div>
+
+    <!-- Tableau principal de l'équipe -->
+    <div class="card">
+      <div class="toolbar">
+        <input
+          type="search"
+          placeholder="Nom, téléphone, quartier, poste…"
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+          style="min-width: 260px"
+        />
+
+        <select [ngModel]="roleFiltre()" (ngModelChange)="roleFiltre.set($event)">
+          <option [ngValue]="null">Tous les rôles</option>
+          <option value="LIVREUR">Livreurs &amp; Terrain</option>
+          <option value="EMPLOYE">Employés &amp; Fournil</option>
+          <option value="ADMIN">Gérants (Web)</option>
+          <option value="PDG">PDG (Mobile)</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Employé &amp; Quartier</th>
+              <th>Téléphone</th>
+              <th>Poste / Rôle</th>
+              <th class="num">Salaire de base</th>
+              <th class="num">Ration jour</th>
+              <th>Absences de garde</th>
+              <th class="num">Salaire Net</th>
+              <th style="text-align: right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (u of utilisateursFiltres(); track u.id) {
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.75rem">
+                    <div class="user-avatar-circle" [title]="'Photo de ' + u.nom">
+                      @if (resoudreUrlPhoto(u.photoProfil); as url) {
+                        <img [src]="url" [alt]="u.nom" class="user-avatar-img" />
+                      } @else {
+                        <span class="user-avatar-initials">{{ initiales(u.nom) }}</span>
+                      }
+                    </div>
+                    <div>
+                      <strong style="color: var(--text-primary); font-size: 0.9rem">{{ u.nom }}</strong>
+                      @if (u.quartier) {
+                        <span
+                          style="
+                            display: block;
+                            font-size: 0.72rem;
+                            color: #6B7280;
+                            font-weight: 600;
+                          "
+                        >
+                          📍 {{ u.quartier }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                </td>
+
+                <td style="font-weight: 600">{{ u.telephone }}</td>
+
+                <td>
+                  <div style="font-weight: 700; color: #374151; font-size: 0.82rem">
+                    {{ u.poste || libelleRole(u.role) }}
+                  </div>
+                  <span class="badge badge-accent" style="font-size: 0.68rem; margin-top: 0.2rem">
+                    {{ libelleRole(u.role) }}
+                  </span>
+                </td>
+
+                <td class="num">
+                  <strong style="font-size: 0.9rem">
+                    {{ (u.salaireBase || 0) | number }} FCFA
+                  </strong>
+                  <span
+                    class="badge"
+                    style="display: block; font-size: 0.68rem; margin-top: 0.2rem; background: #F3F4F6; color: #4B5563"
+                  >
+                    {{ u.frequencePaie === 'MENSUEL' ? 'Mensuel' : 'Par quinzaine' }}
+                  </span>
+                </td>
+
+                <td class="num">
+                  @if (u.rationJournaliere && u.rationJournaliere > 0) {
+                    <span style="font-weight: 700; color: #D97706">
+                      {{ u.rationJournaliere | number }} F/j
+                    </span>
+                  } @else {
+                    <span style="color: #9CA3AF">-</span>
+                  }
+                </td>
+
+                <td>
+                  @if ((u.nombreAbsences || 0) > 0) {
+                    <span class="badge badge-warn" style="font-size: 0.75rem">
+                      ⚠️ {{ u.nombreAbsences }} absence(s) :
+                      <strong>-{{ (u.totalDeductions || 0) | number }} F</strong>
+                    </span>
+                  } @else {
+                    <span class="badge badge-ok" style="font-size: 0.72rem">
+                      ✓ Assidu (0 absence)
+                    </span>
+                  }
+                </td>
+
+                <td class="num">
+                  <strong style="color: #059669; font-size: 0.94rem">
+                    {{ (u.salaireNet !== undefined ? u.salaireNet : u.salaireBase || 0) | number }} FCFA
+                  </strong>
+                </td>
+
+                <td style="text-align: right">
+                  <div class="actions" style="justify-content: flex-end">
+                    <button
+                      type="button"
+                      class="btn-secondary btn-sm"
+                      style="font-size: 0.75rem; padding: 0.3rem 0.65rem"
+                      (click)="ouvrirAbsence(u)"
+                      title="Noter une garde manquée ou consulter l'historique"
+                    >
+                      🚫 Noter absence
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="empty">Aucun employé correspondant.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal d'enregistrement d'un nouvel employé -->
+    @if (dialogNouvelEmploye()) {
+      <app-employe-dialog
+        (fermer)="dialogNouvelEmploye.set(false)"
+        (enregistre)="apresCreationEmploye()"
+      />
+    }
+
+    <!-- Modal de saisie et consultation des absences -->
+    @if (employePourAbsence(); as emp) {
+      <app-absence-dialog
+        [employe]="emp"
+        (fermer)="employePourAbsence.set(null)"
+        (actualiser)="charger()"
+      />
+    }

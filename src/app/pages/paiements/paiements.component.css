@@ -1,0 +1,197 @@
+.stat-card-debt {
+        border-left: 4px solid #DC2626;
+      }
+      .text-debt {
+        color: #DC2626 !important;
+        font-weight: 850;
+      }
+      .text-success {
+        color: #059669 !important;
+        font-weight: 850;
+      }
+      .driver-avatar-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #E08A2E, #B45309);
+        color: #fff;
+        font-weight: 750;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px rgba(224, 138, 46, 0.25);
+      }
+      .debt-remaining-amount {
+        font-size: 0.95rem;
+        font-weight: 800;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+      }
+      .debt-remaining-amount.is-danger {
+        color: #DC2626;
+        background: #FEF2F2;
+      }
+      .debt-remaining-amount.is-settled {
+        color: #059669;
+        background: #ECFDF5;
+      }
+      .row-debiteur {
+        background-color: rgba(254, 242, 242, 0.35);
+      }
+      .modal-box {
+        max-width: 540px;
+        width: 95%;
+      }
+      .recap-box-debt {
+        background: #FFFBEB;
+        border: 1px solid #FDE68A;
+        border-radius: 10px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1.1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .recap-debt-item {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+      }
+      .recap-debt-item.is-highlight {
+        border-top: 1px dashed #F59E0B;
+        padding-top: 0.45rem;
+        margin-top: 0.25rem;
+      }
+      .recap-debt-val {
+        font-size: 1.05rem;
+        font-weight: 850;
+        color: #DC2626;
+      }
+      .preview-deduction {
+        background: #ECFDF5;
+        border: 1px solid #A7F3D0;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.1rem;
+        color: #065F46;
+        font-size: 0.88rem;
+      }
+      .preview-deduction strong {
+        font-size: 1.1rem;
+        font-weight: 850;
+      }
+
+      /* Sélecteur de mode de paiement avec logos */
+      .custom-payment-select {
+        position: relative;
+        user-select: none;
+      }
+      .selected-payment-display {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 0.9rem;
+        background: #FFFFFF;
+        border: 1.5px solid #D1D5DB;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .selected-payment-display:hover {
+        border-color: #E08A2E;
+      }
+      .selected-payment-text {
+        font-size: 0.9rem;
+        font-weight: 650;
+        color: #1F2937;
+        flex: 1;
+      }
+      .dropdown-chevron {
+        font-size: 0.65rem;
+        color: #6B7280;
+        transition: transform 0.2s ease;
+      }
+      .dropdown-chevron.is-rotated {
+        transform: rotate(180deg);
+      }
+      .payment-options-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        right: 0;
+        background: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        z-index: 100;
+        padding: 0.4rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        animation: dropInPay 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      @keyframes dropInPay {
+        from { opacity: 0; transform: translateY(-6px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .payment-option-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.55rem 0.75rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+      .payment-option-item:hover {
+        background: #F3F4F6;
+      }
+      .payment-option-item.is-selected {
+        background: #FFF7ED;
+        border: 1px solid #FED7AA;
+      }
+      .payment-option-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .payment-logo-icon {
+        width: 24px;
+        height: 24px;
+        object-fit: contain;
+        border-radius: 4px;
+        flex-shrink: 0;
+      }
+      .payment-option-label {
+        font-size: 0.88rem;
+        font-weight: 650;
+        color: #1F2937;
+      }
+      .payment-check {
+        color: #EA580C;
+        font-weight: 850;
+        font-size: 0.95rem;
+      }
+      .badge-payment-mode {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        padding: 0.25rem 0.65rem;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 650;
+        color: #334155;
+      }
+      .table-payment-logo {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }

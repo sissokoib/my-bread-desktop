@@ -1,0 +1,4 @@
+/* Styles spécifiques au composant Header */
+:host {
+  display: block;
+}

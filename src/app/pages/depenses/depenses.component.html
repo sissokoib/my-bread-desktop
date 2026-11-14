@@ -1,0 +1,103 @@
+<div class="page-header">
+      <div>
+        <h1>Dépenses et charges</h1>
+        <p class="page-sub">Farine, bois/gaz, électricité, salaires, transport et entretien</p>
+      </div>
+      <button type="button" class="btn-primary" (click)="dialogOuvert.set(true)">
+        + Nouvelle dépense
+      </button>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    <div class="stats-grid">
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Total des dépenses & charges</div>
+            <div class="stat-value">{{ totalMontant() | number }} FCFA</div>
+          </div>
+          <div class="stat-icon-wrapper warning" title="Charges et dépenses du fournil">
+            <span class="material-symbols-outlined">receipt_long</span>
+          </div>
+        </div>
+        <div class="stat-hint">{{ depenses().length }} charge(s) enregistrée(s) (matières premières, énergie, maintenance)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="field">
+          <label for="dateDepFiltre">Filtrer par date</label>
+          <input
+            id="dateDepFiltre"
+            type="date"
+            [ngModel]="dateFiltre()"
+            (ngModelChange)="changerDate($event)"
+          />
+        </div>
+        @if (dateFiltre()) {
+          <button
+            type="button"
+            class="btn-secondary btn-sm"
+            style="align-self: flex-end"
+            (click)="changerDate('')"
+          >
+            Voir toutes les dates
+          </button>
+        }
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Catégorie</th>
+              <th>Description</th>
+              <th class="num">Montant</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of depenses(); track d.id) {
+              <tr>
+                <td>
+                  <strong>{{ d.dateDepense }}</strong>
+                </td>
+                <td>
+                  <span class="badge badge-accent">{{ libelleCategorie(d.categorie) }}</span>
+                </td>
+                <td>{{ d.libelle }}</td>
+                <td class="num">
+                  <strong>{{ d.montant | number }} FCFA</strong>
+                </td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="btn-danger btn-sm"
+                    (click)="supprimer(d)"
+                  >
+                    Supprimer
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">Aucune dépense enregistrée sur cette sélection.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    @if (dialogOuvert()) {
+      <app-depense-dialog
+        [dateParDefaut]="dateFiltre()"
+        (fermer)="dialogOuvert.set(false)"
+        (enregistre)="apresCreation()"
+      />
+    }

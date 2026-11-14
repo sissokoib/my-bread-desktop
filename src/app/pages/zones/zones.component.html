@@ -1,0 +1,68 @@
+<div class="page-header">
+      <div>
+        <h1>Zones et quartiers</h1>
+        <p class="page-sub">Secteurs géographiques pour organiser les tournées de livraison</p>
+      </div>
+      <button type="button" class="btn-primary" (click)="ouvrirCreation()">
+        + Nouvelle zone
+      </button>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    <div class="card">
+      <div class="toolbar">
+        <input
+          type="search"
+          placeholder="Rechercher un quartier…"
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+          style="min-width: 240px"
+        />
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Quartier / secteur</th>
+              <th class="num">Points de livraison</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (z of zonesFiltrees(); track z.id) {
+              <tr>
+                <td>
+                  <strong>{{ z.nom }}</strong>
+                </td>
+                <td class="num">{{ compteurClients().get(z.id) ?? 0 }}</td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="btn-secondary btn-sm"
+                    (click)="ouvrirEdition(z)"
+                  >
+                    Renommer
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="3" class="empty">Aucune zone enregistrée.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    @if (dialogOuvert()) {
+      <app-zone-dialog
+        [zone]="zoneSelectionnee()"
+        (fermer)="dialogOuvert.set(false)"
+        (enregistre)="apresEnregistrement()"
+      />
+    }

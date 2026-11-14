@@ -1,0 +1,90 @@
+<div class="page-header">
+      <div>
+        <h1>Produits et prix</h1>
+        <p class="page-sub">Pains et viennoiseries produits par la boulangerie (tarifs en FCFA)</p>
+      </div>
+      <button type="button" class="btn-primary" (click)="ouvrirCreation()">
+        + Nouveau produit
+      </button>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    <div class="card">
+      <div class="toolbar">
+        <input
+          type="search"
+          placeholder="Rechercher un produit…"
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+          style="min-width: 240px"
+        />
+        <label class="checkbox-line">
+          <input
+            type="checkbox"
+            [ngModel]="actifsSeulement()"
+            (ngModelChange)="actifsSeulement.set($event)"
+          />
+          Actifs seulement
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th class="num">Prix de vente</th>
+              <th class="num">Coût de revient</th>
+              <th class="num">Marge unitaire</th>
+              <th>Statut</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of produitsFiltres(); track p.id) {
+              <tr>
+                <td>
+                  <strong>{{ p.nom }}</strong>
+                </td>
+                <td class="num">{{ p.prixVente | number }} FCFA</td>
+                <td class="num">{{ p.coutRevient | number }} FCFA</td>
+                <td class="num">
+                  <strong>{{ p.prixVente - p.coutRevient | number }} FCFA</strong>
+                </td>
+                <td>
+                  @if (p.actif) {
+                    <span class="badge badge-ok">Actif</span>
+                  } @else {
+                    <span class="badge badge-muted">Inactif</span>
+                  }
+                </td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="btn-secondary btn-sm"
+                    (click)="ouvrirEdition(p)"
+                  >
+                    Modifier
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="empty">Aucun produit correspondant.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    @if (dialogOuvert()) {
+      <app-produit-dialog
+        [produit]="produitSelectionne()"
+        (fermer)="dialogOuvert.set(false)"
+        (enregistre)="apresEnregistrement()"
+      />
+    }

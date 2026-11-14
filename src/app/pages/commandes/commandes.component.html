@@ -1,0 +1,204 @@
+<div class="page-header">
+      <div>
+        <h1>Commandes des livreurs</h1>
+        <p class="page-sub">
+          Suivez les demandes de pains passées par les livreurs pour planifier vos fournées et approvisionner les tournées.
+        </p>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn-primary" (click)="ouvrirCreation()">
+          + Nouvelle commande livreur
+        </button>
+      </div>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    <div class="stats-grid">
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Commandes en attente</div>
+            <div class="stat-value" style="color: var(--stat-commandes)">
+              {{ totalEnAttente() | number }}
+            </div>
+          </div>
+          <div class="stat-icon-wrapper warning" title="Commandes en cours de validation">
+            <span class="material-symbols-outlined">pending_actions</span>
+          </div>
+        </div>
+        <div class="stat-hint">Commandes de livreurs à valider et planifier pour le fournil</div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Total pains commandés</div>
+            <div class="stat-value">{{ totalPainsCommandes() | number }} pains</div>
+          </div>
+          <div class="stat-bread-icon-3d" title="Volume total de pains commandés">
+            <img src="images/pain-3d.png" alt="Pain 3D" class="stat-bread-img-3d" />
+          </div>
+        </div>
+        <div class="stat-hint">Volume cumulé de pain commandé sur la sélection affichée</div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Valeur totale des commandes</div>
+            <div class="stat-value">{{ montantTotalCommandes() | number }} FCFA</div>
+          </div>
+          <div class="stat-icon-wrapper gold" title="Chiffre d'affaires prévisionnel">
+            <span class="material-symbols-outlined">monetization_on</span>
+          </div>
+        </div>
+        <div class="stat-hint">Chiffre d'affaires prévisionnel attendu après livraison</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="field">
+          <label for="filtre-date-cmd">Date de livraison souhaitée</label>
+          <input
+            id="filtre-date-cmd"
+            type="date"
+            [ngModel]="dateFiltre()"
+            (ngModelChange)="dateFiltre.set($event); charger()"
+          />
+        </div>
+
+        <div class="field">
+          <label for="filtre-statut-cmd">Statut</label>
+          <select
+            id="filtre-statut-cmd"
+            [ngModel]="statutFiltre()"
+            (ngModelChange)="statutFiltre.set($event); charger()"
+          >
+            <option value="">Tous les statuts</option>
+            <option value="EN_ATTENTE">En attente</option>
+            <option value="VALIDEE">Validée</option>
+            <option value="ANNULEE">Annulée</option>
+          </select>
+        </div>
+
+        @if (dateFiltre() || statutFiltre()) {
+          <button
+            type="button"
+            class="btn-ghost btn-sm"
+            style="margin-top: 1.35rem"
+            (click)="dateFiltre.set(''); statutFiltre.set(''); charger()"
+          >
+            Tout afficher
+          </button>
+        }
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date souhaitée</th>
+              <th>Livreur demandeur</th>
+              <th>Détail des pains commandés</th>
+              <th class="num">Montant estimé</th>
+              <th>Statut</th>
+              <th class="num">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of commandes(); track c.id) {
+              <tr>
+                <td style="font-weight: 600">{{ c.dateLivraisonSouhaitee }}</td>
+                <td>
+                  <div style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem">
+                    <span class="material-symbols-outlined" style="font-size: 1.25rem; color: #DEAB38">local_shipping</span>
+                    <span>{{ c.livreurNom }}</span>
+                  </div>
+                </td>
+                <td>
+                  @for (l of c.lignes; track l.produitId) {
+                    <div>
+                      <strong>{{ l.quantite | number }}×</strong> {{ l.produitNom }}
+                      <span class="field-hint">({{ l.prixUnitaire | number }} F)</span>
+                    </div>
+                  }
+                  @if (c.remarques) {
+                    <div class="field-hint" style="margin-top: 0.2rem">Note : {{ c.remarques }}</div>
+                  }
+                </td>
+                <td class="num" style="font-weight: 700">{{ c.montantTotal | number }} FCFA</td>
+                <td>
+                  <span
+                    class="badge"
+                    [class.badge-warn]="c.statut === 'EN_ATTENTE'"
+                    [class.badge-ok]="c.statut === 'VALIDEE' || c.statut === 'PREPAREE' || c.statut === 'LIVREE'"
+                    [class.badge-muted]="c.statut === 'ANNULEE'"
+                  >
+                    {{ libelleStatut(c.statut) }}
+                  </span>
+                </td>
+                <td class="num">
+                  <div class="actions">
+                    @if (c.statut === 'EN_ATTENTE') {
+                      <button
+                        type="button"
+                        class="btn-primary btn-sm"
+                        (click)="changerStatut(c, 'VALIDEE')"
+                        title="Valider la commande"
+                      >
+                        Valider
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-danger btn-sm"
+                        (click)="changerStatut(c, 'ANNULEE')"
+                        title="Annuler la commande"
+                      >
+                        Annuler
+                      </button>
+                    } @else if (c.statut === 'VALIDEE' || c.statut === 'PREPAREE' || c.statut === 'LIVREE') {
+                      <button
+                        type="button"
+                        class="btn-danger btn-sm"
+                        (click)="changerStatut(c, 'ANNULEE')"
+                        title="Annuler la commande"
+                      >
+                        Annuler
+                      </button>
+                    } @else if (c.statut === 'ANNULEE') {
+                      <button
+                        type="button"
+                        class="btn-secondary btn-sm"
+                        (click)="changerStatut(c, 'VALIDEE')"
+                        title="Rétablir / Valider la commande"
+                      >
+                        Valider
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="empty">
+                  Aucune commande enregistrée pour ces critères.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    @if (dialogueOuvert()) {
+      <app-commande-dialog
+        [enCours]="enregistrement()"
+        [erreur]="erreurDialogue()"
+        (enregistrer)="creerCommande($event)"
+        (fermer)="dialogueOuvert.set(false)"
+      />
+    }

@@ -1,0 +1,751 @@
+<!-- =====================================================================
+         1. BANNIÈRE PRINCIPALE DU BACK-OFFICE SUPER-ADMIN (SAAS OWNER)
+         ===================================================================== -->
+    <div class="saas-hero-banner">
+      <div class="saas-hero-content">
+        <div class="saas-hero-badge">
+          <span class="badge-star">★</span> BACK-OFFICE PROPRIÉTAIRE SAAS • MY BREAD ENTERPRISE
+        </div>
+        <h1 class="saas-hero-title">
+          Supervision Multi-Boulangeries & Gestion Globale
+        </h1>
+        <p class="saas-hero-desc">
+          Pilotage centralisé des établissements, monitoring des abonnements mensuels, audit de flotte et analyse en temps réel.
+        </p>
+      </div>
+
+      <div class="saas-hero-actions">
+        <button
+          type="button"
+          class="btn-hero-primary"
+          (click)="dialogBoulangerieOuvert.set(true)"
+        >
+          + Nouvelle Boulangerie (Client SaaS)
+        </button>
+        <button
+          type="button"
+          class="btn-hero-secondary"
+          (click)="ouvrirCreationCompte()"
+        >
+          + Créer un Utilisateur
+        </button>
+        <button
+          type="button"
+          class="btn-hero-outline"
+          (click)="exporterRapportCSV()"
+          title="Télécharger l'audit complet au format Excel / CSV"
+        >
+          📥 Exporter Rapport CSV
+        </button>
+        <button
+          type="button"
+          class="btn-hero-ghost"
+          (click)="chargerTout()"
+          title="Recharger toutes les données"
+        >
+          🔄 Actualiser
+        </button>
+      </div>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+    @if (succes()) {
+      <div class="alert saas-alert-success">
+        {{ succes() }}
+      </div>
+    }
+
+    <!-- =====================================================================
+         2. BANNIÈRE PROACTIVE : ALERTES D'EXPIRATION IMMINENTE (< 7 JOURS)
+         ===================================================================== -->
+    @if (boulangeriesEnAlerte().length > 0) {
+      <div class="saas-alert-banner">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-body">
+          <div class="alert-title">
+            {{ boulangeriesEnAlerte().length }} boulangerie(s) nécessitent votre attention immédiate (échéance proche ou expirée) :
+          </div>
+          <div class="alert-boulangeries-pills">
+            @for (b of boulangeriesEnAlerte(); track b.id) {
+              <div class="alert-pill-item">
+                <span class="pill-name">🏛️ {{ b.nom }}</span>
+                <span [class]="b.expire ? 'pill-tag pill-tag-danger' : 'pill-tag pill-tag-warning'">
+                  {{ b.expire ? 'Expiré' : b.joursRestants + ' j restant(s)' }}
+                </span>
+                <a [href]="'tel:' + b.telephone" class="pill-call" title="Appeler le responsable">
+                  📞 {{ b.telephone }}
+                </a>
+                <button
+                  type="button"
+                  class="pill-btn-quick"
+                  (click)="prolongerAbonnementManuel(b, 30)"
+                  title="Prolonger de 30 jours après encaissement"
+                >
+                  +30j
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- =====================================================================
+         3. KPI CARDS : VITALITÉ FINANCIÈRE & SAAS EN TEMPS RÉEL
+         ===================================================================== -->
+    @if (plateforme(); as p) {
+      <div class="saas-kpi-grid">
+        <div class="saas-kpi-card card-glow-gold">
+          <div class="kpi-header">
+            <span class="kpi-icon">💰</span>
+            <span class="kpi-tag">Plateforme</span>
+          </div>
+          <div class="kpi-label">Chiffre d'Affaires Global</div>
+          <div class="kpi-value text-gold">{{ p.chiffreAffairesGlobal | number }} <small>FCFA</small></div>
+          <div class="kpi-footer">
+            <span class="kpi-sub">Total facturé sur toutes les boulangeries</span>
+          </div>
+        </div>
+
+        <div class="saas-kpi-card card-glow-green">
+          <div class="kpi-header">
+            <span class="kpi-icon">✅</span>
+            <span class="kpi-tag">Trésorerie</span>
+          </div>
+          <div class="kpi-label">Total Encaissé Réel</div>
+          <div class="kpi-value text-green">{{ p.encaisseGlobal | number }} <small>FCFA</small></div>
+          <div class="kpi-footer">
+            <span class="kpi-sub">{{ p.totalPaiements | number }} encaissements validés</span>
+          </div>
+        </div>
+
+        <div class="saas-kpi-card card-glow-amber">
+          <div class="kpi-header">
+            <span class="kpi-icon">⏳</span>
+            <span class="kpi-tag">Encours</span>
+          </div>
+          <div class="kpi-label">Dettes Boutiquiers en Cours</div>
+          <div class="kpi-value text-amber">{{ p.dettesGlobales | number }} <small>FCFA</small></div>
+          <div class="kpi-footer">
+            <span class="kpi-sub">Crédits restants à recouvrer</span>
+          </div>
+        </div>
+
+        <div class="saas-kpi-card card-glow-blue">
+          <div class="kpi-header">
+            <span class="kpi-icon">🏛️</span>
+            <span class="kpi-tag">Abonnements</span>
+          </div>
+          <div class="kpi-label">Établissements & Santé SaaS</div>
+          <div class="kpi-value text-blue">
+            {{ nbBoulangeriesActives() }} / {{ boulangeries().length }}
+            <small style="font-size: 0.95rem; font-weight: 600">actifs</small>
+          </div>
+          <div class="kpi-footer">
+            <span class="kpi-sub">Taux de rétention : {{ tauxRetention() }}%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- =====================================================================
+           4. VISUALISATION GRAPHIQUE PROFESSIONNELLE : 3 GRAPHIQUES INTERACTIFS
+           ===================================================================== -->
+      <div class="saas-analytics-section">
+        <div class="analytics-header">
+          <div>
+            <h2 class="analytics-title">📊 Visualisation & Analyse Complète de la Plateforme</h2>
+            <p class="analytics-subtitle">
+              Graphiques comparatifs des boulangeries, santé des licences et répartition de la flotte opérationnelle.
+            </p>
+          </div>
+          <div class="analytics-tag">Mise à jour en temps réel</div>
+        </div>
+
+        <div class="analytics-grid">
+          <!-- GRAPHIQUE 1 : Bar Chart Comparatif CA des Boulangeries -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <h3 class="chart-title">Chiffre d'Affaires par Boulangerie</h3>
+                <span class="chart-subtitle">Comparatif des volumes de vente générés (FCFA)</span>
+              </div>
+              <span class="chart-chip">Top Performers</span>
+            </div>
+
+            <div class="bar-chart-container">
+              @if (boulangeries().length === 0) {
+                <div class="chart-empty">Aucune boulangerie enregistrée</div>
+              } @else {
+                <div class="bar-chart-wrapper">
+                  @for (b of topBoulangeriesParCA(); track b.id) {
+                    <div class="bar-col">
+                      <div class="bar-val-tip">
+                        {{ b.caTotal | number }} F
+                      </div>
+                      <div class="bar-track">
+                        <div
+                          class="bar-fill"
+                          [style.height.%]="calculerHauteurBarre(b.caTotal)"
+                          [title]="b.nom + ' : ' + (b.caTotal | number) + ' FCFA'"
+                        >
+                          <div class="bar-fill-glow"></div>
+                        </div>
+                      </div>
+                      <div class="bar-name" [title]="b.nom">
+                        {{ tronquerTexte(b.nom, 11) }}
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            <div class="chart-legend-row">
+              <span class="legend-item"><span class="legend-dot dot-gold"></span> CA Ventes réalisées</span>
+              <span class="legend-sub">Échelle indexée sur le CA max ({{ maxCA() | number }} FCFA)</span>
+            </div>
+          </div>
+
+          <!-- GRAPHIQUE 2 : Donut Chart Santé des Abonnements SaaS -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <h3 class="chart-title">Santé des Licences & Abonnements</h3>
+                <span class="chart-subtitle">Répartition opérationnelle des comptes boulangeries</span>
+              </div>
+              <span class="chart-chip">{{ boulangeries().length }} Établissements</span>
+            </div>
+
+            <div class="donut-chart-container">
+              <div class="donut-svg-wrapper">
+                <svg viewBox="0 0 100 100" class="donut-svg">
+                  <!-- Fond gris clair -->
+                  <circle cx="50" cy="50" r="38" fill="transparent" stroke="#EFEBE4" stroke-width="12" />
+                  <!-- Segments dynamiques -->
+                  @if (boulangeries().length > 0) {
+                    <!-- Actifs (Vert) -->
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      fill="transparent"
+                      stroke="#10B981"
+                      stroke-width="12"
+                      [attr.stroke-dasharray]="donutSegments().actifsDash"
+                      stroke-dashoffset="0"
+                      stroke-linecap="round"
+                    />
+                    <!-- Essais (Or) -->
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      fill="transparent"
+                      stroke="#F59E0B"
+                      stroke-width="12"
+                      [attr.stroke-dasharray]="donutSegments().essaisDash"
+                      [attr.stroke-dashoffset]="donutSegments().essaisOffset"
+                      stroke-linecap="round"
+                    />
+                    <!-- Expirés (Rouge) -->
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="38"
+                      fill="transparent"
+                      stroke="#EF4444"
+                      stroke-width="12"
+                      [attr.stroke-dasharray]="donutSegments().expiresDash"
+                      [attr.stroke-dashoffset]="donutSegments().expiresOffset"
+                      stroke-linecap="round"
+                    />
+                  }
+                </svg>
+                <div class="donut-center-text">
+                  <div class="donut-big-pct">{{ tauxRetention() }}%</div>
+                  <div class="donut-sub-label">En règle</div>
+                </div>
+              </div>
+
+              <div class="donut-legend-col">
+                <div class="donut-stat-row">
+                  <span class="donut-bullet bg-green"></span>
+                  <span class="donut-label">Actifs</span>
+                  <span class="donut-num">{{ donutSegments().nbActifs }}</span>
+                </div>
+                <div class="donut-stat-row">
+                  <span class="donut-bullet bg-amber"></span>
+                  <span class="donut-label">Essai Gratuit</span>
+                  <span class="donut-num">{{ donutSegments().nbEssai }}</span>
+                </div>
+                <div class="donut-stat-row">
+                  <span class="donut-bullet bg-red"></span>
+                  <span class="donut-label">Expirés / Relance</span>
+                  <span class="donut-num">{{ donutSegments().nbExpires }}</span>
+                </div>
+                <div class="donut-stat-row">
+                  <span class="donut-bullet bg-gray"></span>
+                  <span class="donut-label">Suspendus</span>
+                  <span class="donut-num">{{ donutSegments().nbSuspendus }}</span>
+                </div>
+
+                <div class="saas-plan-badges">
+                  <span class="plan-tag tag-starter">Starter: {{ countPlan('STARTER') }}</span>
+                  <span class="plan-tag tag-pro">Pro: {{ countPlan('PRO') }}</span>
+                  <span class="plan-tag tag-reseau">Réseau: {{ countPlan('RESEAU') }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GRAPHIQUE 3 : Flotte Opérationnelle & Réseau de Distribution -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <h3 class="chart-title">Réseau de Distribution & Flotte</h3>
+                <span class="chart-subtitle">Livreurs et boutiques partenaires par boulangerie</span>
+              </div>
+              <span class="chart-chip">Flotte Mobile</span>
+            </div>
+
+            <div class="fleet-chart-list">
+              @for (b of topBoulangeriesParCA().slice(0, 5); track b.id) {
+                <div class="fleet-item">
+                  <div class="fleet-name-row">
+                    <span class="fleet-boulangerie-name">🏛️ {{ b.nom }}</span>
+                    <span class="fleet-counts">
+                      <strong>{{ b.nbLivreurs }}</strong> livreur(s) • <strong>{{ b.nbClients }}</strong> boutique(s)
+                    </span>
+                  </div>
+                  <div class="fleet-gauge-wrapper">
+                    <div class="fleet-bar-livreurs" [style.width.%]="calcGauge(b.nbLivreurs, 10)" title="Livreurs"></div>
+                    <div class="fleet-bar-clients" [style.width.%]="calcGauge(b.nbClients, 25)" title="Boutiques clientes"></div>
+                  </div>
+                </div>
+              }
+            </div>
+            <div class="chart-legend-row">
+              <span class="legend-item"><span class="legend-dot dot-blue"></span> Livreurs actifs</span>
+              <span class="legend-item"><span class="legend-dot dot-purple"></span> Boutiques desservies</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =====================================================================
+           5. SECTION TABLEAU DES ÉTABLISSEMENTS & ABONNEMENTS SAAS
+           ===================================================================== -->
+      <div class="card" style="margin-bottom: 1.5rem">
+        <div class="saas-table-toolbar">
+          <div>
+            <h2 class="section-title">
+              🏛️ Établissements & Licences des Boulangeries ({{ boulangeriesFiltrees().length }} / {{ boulangeries().length }})
+            </h2>
+            <p class="section-desc">
+              Gérez les accès, les forfaits et renouvelez immédiatement les abonnements mensuels.
+            </p>
+          </div>
+
+          <!-- Filtres rapides d'état -->
+          <div class="saas-filter-tabs">
+            <button
+              type="button"
+              [class]="ongletStatut() === 'TOUS' ? 'filter-tab-active' : 'filter-tab'"
+              (click)="ongletStatut.set('TOUS')"
+            >
+              Tous ({{ boulangeries().length }})
+            </button>
+            <button
+              type="button"
+              [class]="ongletStatut() === 'ACTIFS' ? 'filter-tab-active' : 'filter-tab'"
+              (click)="ongletStatut.set('ACTIFS')"
+            >
+              Actifs ({{ nbBoulangeriesActives() }})
+            </button>
+            <button
+              type="button"
+              [class]="ongletStatut() === 'ESSAI' ? 'filter-tab-active' : 'filter-tab'"
+              (click)="ongletStatut.set('ESSAI')"
+            >
+              En Essai ({{ donutSegments().nbEssai }})
+            </button>
+            <button
+              type="button"
+              [class]="ongletStatut() === 'ALERTES' ? 'filter-tab-active' : 'filter-tab'"
+              (click)="ongletStatut.set('ALERTES')"
+            >
+              ⚠️ Alertes / Expirés ({{ boulangeriesEnAlerte().length }})
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Boulangerie</th>
+                <th>Plan & Tarif</th>
+                <th>Statut Abonnement</th>
+                <th>Date d'échéance</th>
+                <th>Comptes & Équipe</th>
+                <th>Renouvellement Manuel</th>
+                <th>Accès</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of boulangeriesFiltrees(); track b.id) {
+                <tr [class.row-alert]="b.expire || b.joursRestants <= 5">
+                  <td>
+                    <div class="boulangerie-cell-title">{{ b.nom }}</div>
+                    <div class="boulangerie-cell-contact">
+                      📞 <a [href]="'tel:' + b.telephone">{{ b.telephone }}</a>
+                      @if (b.adresse) {
+                        • 📍 {{ b.adresse }}
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge-plan-saas" [attr.data-plan]="b.plan">
+                      {{ b.plan }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (b.statutAbonnement === 'ACTIF' && !b.expire) {
+                      <span class="badge-status-pill pill-active">
+                        ● Actif ({{ b.joursRestants }}j restants)
+                      </span>
+                    } @else if (b.statutAbonnement === 'ESSAI_GRATUIT' && !b.expire) {
+                      <span class="badge-status-pill pill-trial">
+                        ★ Essai Gratuit ({{ b.joursRestants }}j)
+                      </span>
+                    } @else if (b.statutAbonnement === 'SUSPENDU') {
+                      <span class="badge-status-pill pill-suspended">
+                        ✕ Suspendu
+                      </span>
+                    } @else {
+                      <span class="badge-status-pill pill-expired">
+                        ⚠️ Expiré (À contacter)
+                      </span>
+                    }
+                  </td>
+                  <td>
+                    <div class="date-echeance-val">
+                      {{ b.dateFinAbonnement | date: 'dd/MM/yyyy' }}
+                    </div>
+                    <div class="date-creation-sub">
+                      Inscrit le {{ b.dateCreation | date: 'dd/MM/yyyy' }}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="equipe-summary">
+                      <strong>{{ b.nbLivreurs }}</strong> livreur(s)
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-voir-equipe"
+                      (click)="filtrerUtilisateursParBoulangerie(b.id)"
+                      title="Filtrer et afficher tous les utilisateurs de cette boulangerie"
+                    >
+                      👥 Voir l'équipe ({{ nbMembresParBoulangerie().get(b.id) || b.nbLivreurs + 1 }})
+                    </button>
+                  </td>
+                  <td>
+                    <!-- Boutons de prolongation manuelle après encaissement -->
+                    <div class="prolongation-btns">
+                      <button
+                        type="button"
+                        class="btn-prolong-badge"
+                        title="Prolonger de 30 jours après paiement"
+                        (click)="prolongerAbonnementManuel(b, 30)"
+                      >
+                        +30j
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-prolong-badge"
+                        title="Prolonger de 90 jours (Trimestre)"
+                        (click)="prolongerAbonnementManuel(b, 90)"
+                      >
+                        +90j
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-prolong-badge btn-prolong-year"
+                        title="Prolonger de 365 jours (Abonnement Annuel)"
+                        (click)="prolongerAbonnementManuel(b, 365)"
+                      >
+                        +1 an
+                      </button>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="acces-btns">
+                      <button
+                        type="button"
+                        [class]="b.actif ? 'btn-danger btn-sm' : 'btn-primary btn-sm'"
+                        (click)="basculerStatutBoulangerie(b)"
+                      >
+                        {{ b.actif ? 'Suspendre' : 'Activer' }}
+                      </button>
+                      @if (b.actif && !b.expire) {
+                        <button
+                          type="button"
+                          class="btn-secondary btn-sm btn-expire-test"
+                          title="Simuler la fin de la période d'essai pour tester le blocage"
+                          (click)="simulerFinEssai(b)"
+                        >
+                          Fin essai
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- =====================================================================
+           6. AUDIT MULTI-BOULANGERIES : UTILISATEURS AVEC DIFFÉRENCIATION VISUELLE
+           ===================================================================== -->
+      <div id="section-utilisateurs" class="card" style="margin-bottom: 1.5rem">
+        <div class="saas-table-toolbar">
+          <div>
+            <h2 class="section-title">
+              👥 Répertoire Multi-Boulangeries des Utilisateurs ({{ comptesFiltres().length }} / {{ p.totalUtilisateurs }})
+            </h2>
+            <p class="section-desc">
+              Différenciez et filtrez facilement chaque membre par établissement, rôle et statut d'accès.
+            </p>
+          </div>
+
+          <!-- Barre de filtres complets -->
+          <div class="users-filter-bar">
+            <!-- Filtre Établissement / Boulangerie -->
+            <div class="filter-group">
+              <label class="filter-label">Boulangerie :</label>
+              <select
+                class="filter-select select-boulangerie"
+                [ngModel]="boulangerieFiltre()"
+                (ngModelChange)="boulangerieFiltre.set($event)"
+              >
+                <option [ngValue]="null">🏛️ Toutes les boulangeries</option>
+                @for (b of boulangeries(); track b.id) {
+                  <option [ngValue]="b.id">
+                    {{ b.nom }} ({{ nbMembresParBoulangerie().get(b.id) || 0 }} membres)
+                  </option>
+                }
+              </select>
+            </div>
+
+            <!-- Filtre Rôle -->
+            <div class="filter-group">
+              <label class="filter-label">Rôle :</label>
+              <select
+                class="filter-select"
+                [ngModel]="roleFiltre()"
+                (ngModelChange)="roleFiltre.set($event)"
+              >
+                <option [ngValue]="null">Tous les rôles</option>
+                <option value="ADMIN">Gérant (Web)</option>
+                <option value="PDG">PDG (Mobile)</option>
+                <option value="LIVREUR">Livreur</option>
+                <option value="SUPER_ADMIN">Super-Admin</option>
+              </select>
+            </div>
+
+            <!-- Recherche Textuelle -->
+            <input
+              type="text"
+              class="filter-input-search"
+              placeholder="Rechercher nom, tél, boulangerie…"
+              [ngModel]="recherche()"
+              (ngModelChange)="recherche.set($event)"
+            />
+
+            @if (boulangerieFiltre() !== null || roleFiltre() !== null || recherche().trim().length > 0) {
+              <button
+                type="button"
+                class="btn-reset-filters"
+                (click)="reinitialiserFiltresUtilisateurs()"
+                title="Effacer tous les filtres"
+              >
+                ✕ Réinitialiser
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (nomBoulangerieFiltree(); as nomFiltre) {
+          <div class="filter-active-notice">
+            <span>Filtre actif : Affichage exclusif de l'équipe de <strong>{{ nomFiltre }}</strong> ({{ comptesFiltres().length }} membre(s))</span>
+            <button type="button" class="btn-clear-chip" (click)="boulangerieFiltre.set(null)">
+              Afficher toutes les boulangeries
+            </button>
+          </div>
+        }
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Téléphone</th>
+                <th>Boulangerie d'appartenance</th>
+                <th>Rôle Actuel</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (u of comptesFiltres(); track u.id) {
+                <tr>
+                  <td>
+                    <div class="user-row-flex">
+                      <div class="user-avatar-circle" [title]="'Photo de ' + u.nom">
+                        @if (resoudreUrlPhoto(u.photoProfil); as url) {
+                          <img [src]="url" [alt]="u.nom" class="user-avatar-img" />
+                        } @else {
+                          <span class="user-avatar-initials">{{ initiales(u.nom) }}</span>
+                        }
+                      </div>
+                      <div>
+                        <div class="user-name-text">{{ u.nom }}</div>
+                        @if (u.telephone === monTelephone()) {
+                          <span class="user-self-tag">(Votre compte actuel)</span>
+                        }
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a [href]="'tel:' + u.telephone" class="user-phone-link">{{ u.telephone }}</a>
+                  </td>
+                  <td>
+                    <!-- TAG VISUEL DISTINCTIF DE BOULANGERIE -->
+                    <span
+                      class="bakery-identity-pill"
+                      [style.border-color]="couleurBoulangerie(u.boulangerieNom)"
+                      [style.background]="fondBoulangerie(u.boulangerieNom)"
+                    >
+                      <span class="bakery-bullet" [style.background]="couleurBoulangerie(u.boulangerieNom)"></span>
+                      <span class="bakery-name-label">{{ u.boulangerieNom || 'Plateforme SaaS Globale' }}</span>
+                    </span>
+                  </td>
+                  <td>
+                    <select
+                      class="role-select"
+                      [disabled]="u.telephone === monTelephone()"
+                      [ngModel]="u.role"
+                      (ngModelChange)="changerRole(u, $event)"
+                    >
+                      <option value="ADMIN">Gérant (Web)</option>
+                      <option value="PDG">PDG (Mobile)</option>
+                      <option value="LIVREUR">Livreur</option>
+                      <option value="SUPER_ADMIN">Super-Admin</option>
+                    </select>
+                  </td>
+                  <td>
+                    <span [class]="u.actif ? 'badge badge-success' : 'badge badge-error'">
+                      {{ u.actif ? 'Actif' : 'Suspendu' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div style="display: flex; gap: 0.4rem">
+                      <button
+                        type="button"
+                        class="btn-secondary btn-sm"
+                        (click)="utilisateurAEditer.set(u)"
+                        title="Modifier l'utilisateur ou sa boulangerie rattachée"
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-secondary btn-sm"
+                        (click)="utilisateurMdp.set(u)"
+                      >
+                        Changer MDP
+                      </button>
+                      @if (u.telephone !== monTelephone()) {
+                        <button
+                          type="button"
+                          [class]="u.actif ? 'btn-danger btn-sm' : 'btn-primary btn-sm'"
+                          (click)="basculerStatut(u)"
+                        >
+                          {{ u.actif ? 'Suspendre' : 'Activer' }}
+                        </button>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- =====================================================================
+           7. ZONE DE MAINTENANCE SYSTÈME & PURGE DE TEST
+           ===================================================================== -->
+      <div class="card saas-maintenance-card">
+        <div class="maintenance-flex">
+          <div>
+            <h2 class="maintenance-title">
+              ⚠️ Maintenance Plateforme & Purge Transactionnelle
+            </h2>
+            <p class="maintenance-desc">
+              Permet de réinitialiser toutes les données de test (fournées, tournées, livraisons, paiements, commandes, dépenses).
+              Les comptes, les boulangeries, les zones et les produits sont préservés.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="btn-danger"
+            (click)="purgerOperations()"
+          >
+            Purger les opérations transactionnelles
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Dialog de création de Boulangerie SaaS -->
+    @if (dialogBoulangerieOuvert()) {
+      <app-boulangerie-dialog
+        (fermer)="dialogBoulangerieOuvert.set(false)"
+        (enregistre)="apresCreationBoulangerie($event)"
+      />
+    }
+
+    <!-- Dialog de création d'utilisateur -->
+    @if (dialogCreationOuvert()) {
+      <app-utilisateur-dialog
+        [utilisateur]="null"
+        [boulangeriesDisponibles]="boulangeries()"
+        [boulangerieIdPreselectionne]="boulangerieFiltre()"
+        (fermer)="dialogCreationOuvert.set(false)"
+        (enregistre)="apresCreationCompte()"
+      />
+    }
+
+    <!-- Dialog de modification d'utilisateur -->
+    @if (utilisateurAEditer(); as uEdit) {
+      <app-utilisateur-dialog
+        [utilisateur]="uEdit"
+        [boulangeriesDisponibles]="boulangeries()"
+        [boulangerieIdPreselectionne]="uEdit.boulangerieId"
+        (fermer)="utilisateurAEditer.set(null)"
+        (enregistre)="apresModificationCompte()"
+      />
+    }
+
+    <!-- Dialog de mot de passe -->
+    @if (utilisateurMdp(); as uMdp) {
+      <app-mot-de-passe-dialog
+        [utilisateur]="uMdp"
+        (fermer)="utilisateurMdp.set(null)"
+        (enregistre)="apresChangementMdp()"
+      />
+    }

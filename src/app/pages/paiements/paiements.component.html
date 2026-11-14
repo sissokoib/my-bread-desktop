@@ -1,0 +1,563 @@
+<div class="page-header">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem">
+          <span class="material-symbols-outlined" style="font-size: 1.6rem; color: var(--primary)">account_balance_wallet</span>
+          <h1 style="margin: 0">Dettes & Règlements des Livreurs</h1>
+        </div>
+        <p class="page-sub">
+          Suivi des dettes des livreurs : toute somme versée est automatiquement et immédiatement déduite du reste dû.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.6rem; flex-wrap: wrap">
+        <button type="button" class="btn-secondary" (click)="ouvrirModalAjoutDette()">
+          + Noter une dette
+        </button>
+        <button type="button" class="btn-primary" (click)="ouvrirModalReglement(null)">
+          + Encaisser un règlement
+        </button>
+      </div>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    @if (notificationSucces()) {
+      <div class="alert alert-success" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 0.8rem 1rem; border-radius: 12px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center">
+        <span>✅ {{ notificationSucces() }}</span>
+        <button type="button" style="background: none; border: none; cursor: pointer; color: #065F46; font-weight: bold" (click)="notificationSucces.set(null)">✕</button>
+      </div>
+    }
+
+    <!-- Grille des statistiques clés des dettes livreurs -->
+    <div class="stats-grid">
+      <div class="card stat-card-debt">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Total des dettes à recouvrer</div>
+            <div class="stat-value text-debt">{{ dettesTotalesRestantes() | number }} FCFA</div>
+          </div>
+          <div class="stat-icon-wrapper warning" title="Créances à recouvrer">
+            <span class="material-symbols-outlined">money_off</span>
+          </div>
+        </div>
+        <div class="stat-hint">
+          <strong>{{ nombreDebiteurs() }}</strong> livreur(s) ont un solde débiteur actif
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Total des remboursements encaissés</div>
+            <div class="stat-value text-success">{{ totalRemboursementEncaisses() | number }} FCFA</div>
+          </div>
+          <div class="stat-icon-wrapper success" title="Versements déduits">
+            <span class="material-symbols-outlined">savings</span>
+          </div>
+        </div>
+        <div class="stat-hint">{{ reglements().length }} versement(s) déduit(s) en caisse</div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Taux de régularisation</div>
+            <div class="stat-value">{{ tauxRecouvrement() }}%</div>
+          </div>
+          <div class="stat-icon-wrapper info" title="Progression du recouvrement">
+            <span class="material-symbols-outlined">verified</span>
+          </div>
+        </div>
+        <div class="stat-hint">Recouvré sur un cumul initial de {{ cumulDettesInitiales() | number }} FCFA</div>
+      </div>
+    </div>
+
+    <!-- TABLEAU 1 : SITUATION DÉTAILLÉE PAR LIVREUR -->
+    <div class="card" style="margin-bottom: 1.5rem">
+      <div class="page-header" style="margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem">
+        <div>
+          <h2 style="font-size: 1.15rem; margin: 0">Situation des comptes de chaque livreur</h2>
+          <p class="field-hint" style="margin: 0.2rem 0 0 0">
+            Les dettes réglées (solde = 0) disparaissent de la liste active et sont archivées dans le journal d'historique ci-dessous.
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.4rem; background: #F3F4F6; padding: 4px; border-radius: 10px">
+          <button
+            type="button"
+            class="tab-btn"
+            (click)="filtreDebiteursSeulement.set(true)"
+            style="padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s"
+            [style.background]="filtreDebiteursSeulement() ? '#FFFFFF' : 'transparent'"
+            [style.boxShadow]="filtreDebiteursSeulement() ? '0 1px 3px rgba(0,0,0,0.12)' : 'none'"
+            [style.color]="filtreDebiteursSeulement() ? '#DC2626' : '#6B7280'"
+          >
+            ⚠️ Dettes actives en cours ({{ nombreDebiteurs() }})
+          </button>
+          <button
+            type="button"
+            class="tab-btn"
+            (click)="filtreDebiteursSeulement.set(false)"
+            style="padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s"
+            [style.background]="!filtreDebiteursSeulement() ? '#FFFFFF' : 'transparent'"
+            [style.boxShadow]="!filtreDebiteursSeulement() ? '0 1px 3px rgba(0,0,0,0.12)' : 'none'"
+            [style.color]="!filtreDebiteursSeulement() ? '#111827' : '#6B7280'"
+          >
+            Tous les livreurs ({{ situationsLivreurs().length }})
+          </button>
+        </div>
+      </div>
+
+      <div class="toolbar" style="gap: 0.75rem; flex-wrap: wrap">
+        <input
+          type="search"
+          placeholder="Rechercher par nom de livreur ou téléphone…"
+          [ngModel]="recherche()"
+          (ngModelChange)="recherche.set($event)"
+          style="min-width: 280px"
+        />
+
+        <div style="display: flex; gap: 0.5rem; align-items: center">
+          <label class="checkbox-line" style="margin: 0; cursor: pointer">
+            <input
+              type="checkbox"
+              [ngModel]="filtreDebiteursSeulement()"
+              (ngModelChange)="filtreDebiteursSeulement.set($event)"
+            />
+            <span>Afficher uniquement les dettes actives (reste &gt; 0)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Livreur</th>
+              <th>Téléphone</th>
+              <th class="num">Ventes confiées</th>
+              <th class="num">Versé en tournée</th>
+              <th class="num">Dettes / Écarts notés</th>
+              <th class="num">Versements réglés</th>
+              <th class="num">Reste à devoir</th>
+              <th>Statut</th>
+              <th style="text-align: right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of situationsFiltrees(); track d.livreurId) {
+              <tr [class.row-debiteur]="d.resteADevoir > 0">
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.6rem">
+                    <div class="driver-avatar-circle">{{ initiales(d.livreurNom) }}</div>
+                    <strong>{{ d.livreurNom }}</strong>
+                  </div>
+                </td>
+                <td>
+                  <a [href]="'tel:' + d.livreurTelephone" style="color: inherit; text-decoration: none">
+                    {{ d.livreurTelephone }}
+                  </a>
+                </td>
+                <td class="num">{{ d.totalVentesTournees | number }} FCFA</td>
+                <td class="num">{{ d.totalEncaisseTournees | number }} FCFA</td>
+                <td class="num">
+                  @if (d.detteInitiale > 0) {
+                    <span style="color: #B45309; font-weight: 600">+{{ d.detteInitiale | number }} FCFA</span>
+                  } @else {
+                    <span class="field-hint">0 FCFA</span>
+                  }
+                </td>
+                <td class="num" style="color: #059669; font-weight: 600">
+                  {{ d.totalRegle | number }} FCFA
+                </td>
+                <td class="num">
+                  <span
+                    class="debt-remaining-amount"
+                    [class.is-danger]="d.resteADevoir > 0"
+                    [class.is-settled]="d.resteADevoir <= 0"
+                  >
+                    {{ d.resteADevoir | number }} FCFA
+                  </span>
+                </td>
+                <td>
+                  @if (d.resteADevoir <= 0) {
+                    <span class="badge badge-ok">✅ Soldé (Archivé)</span>
+                  } @else {
+                    <span class="badge badge-warn">⚠️ Dette active</span>
+                  }
+                </td>
+                <td class="actions" style="text-align: right">
+                  @if (d.resteADevoir > 0) {
+                    <button
+                      type="button"
+                      class="btn-primary btn-sm"
+                      (click)="ouvrirModalReglement(d)"
+                      [title]="'Encaisser un versement de ' + d.livreurNom"
+                    >
+                      Encaisser
+                    </button>
+                  } @else {
+                    <span class="badge" style="background: #F3F4F6; color: #6B7280; font-size: 0.72rem; padding: 0.25rem 0.5rem">
+                      Dette soldée
+                    </span>
+                  }
+                  <button
+                    type="button"
+                    class="btn-secondary btn-sm"
+                    (click)="ouvrirModalAjoutDette(d)"
+                    title="Ajouter une dette ou un écart"
+                  >
+                    + Dette
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="empty" style="padding: 2.25rem 1rem; text-align: center">
+                  @if (filtreDebiteursSeulement()) {
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem">
+                      <span style="font-size: 2.2rem">🎉</span>
+                      <strong style="color: #059669; font-size: 1.1rem">Aucune dette active en cours !</strong>
+                      <span class="field-hint">Tous les comptes livreurs sont soldés et à jour. Retrouvez l'historique complet des versements dans le journal ci-dessous.</span>
+                    </div>
+                  } @else {
+                    Aucun livreur trouvé correspondant aux critères de recherche.
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABLEAU 2 : HISTORIQUE DES RÈGLEMENTS & DÉDUCTIONS AUTOMATIQUES -->
+    <div class="card">
+      <div class="page-header" style="margin-bottom: 0.75rem">
+        <div>
+          <h2 style="font-size: 1.15rem; margin: 0">Journal des règlements et déductions immédiates (Historique)</h2>
+          <p class="field-hint" style="margin: 0.2rem 0 0 0">
+            Historique complet de tous les versements de dettes et confirmation des soldes entièrement réglés.
+          </p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date & Heure</th>
+              <th>Livreur</th>
+              <th>Téléphone</th>
+              <th>Mode de règlement</th>
+              <th class="num">Montant versé</th>
+              <th class="num">Dette avant</th>
+              <th class="num">Reste après déduction</th>
+              <th>Statut règlement</th>
+              <th>Motif / Remarque</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of reglements(); track r.id) {
+              <tr>
+                <td>{{ r.dateReglement }}</td>
+                <td>
+                  <strong>{{ r.livreurNom }}</strong>
+                </td>
+                <td>{{ r.livreurTelephone }}</td>
+                <td>
+                  <span class="badge-payment-mode">
+                    <img [src]="getLogoMode(r.modePaiement)" [alt]="r.modePaiement" class="table-payment-logo" />
+                    <span>{{ libelleMode(r.modePaiement) }}</span>
+                  </span>
+                </td>
+                <td class="num" style="color: #059669; font-weight: 750">
+                  - {{ r.montant | number }} FCFA
+                </td>
+                <td class="num">{{ r.detteAvant | number }} FCFA</td>
+                <td class="num">
+                  <strong [style.color]="r.detteApres > 0 ? '#B45309' : '#059669'">
+                    {{ r.detteApres | number }} FCFA
+                  </strong>
+                </td>
+                <td>
+                  @if (r.detteApres <= 0) {
+                    <span class="badge badge-ok" style="background: #ECFDF5; color: #059669; border: 1px solid #A7F3D0; font-weight: 700">
+                      🎉 Dette soldée
+                    </span>
+                  } @else {
+                    <span class="badge badge-warn" style="background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; font-weight: 600">
+                      ⏳ Acompte partiel
+                    </span>
+                  }
+                </td>
+                <td>
+                  <span class="field-hint">{{ r.remarques || 'Règlement de dette' }}</span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="empty">
+                  Aucun règlement de dette enregistré pour le moment. Cliquez sur « + Encaisser un règlement » pour déduire un montant.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==============================================================
+         MODAL 1 : ENCAISSER UN RÈGLEMENT (DÉDUCTION IMMÉDIATE)
+         ============================================================== -->
+    @if (modalReglementOuvert()) {
+      <div class="backdrop" (click)="modalReglementOuvert.set(false)">
+        <form class="dialog modal-box" (click)="$event.stopPropagation()" (ngSubmit)="enregistrerReglement()">
+          <div class="dialog-header">
+            <div>
+              <h2 style="margin: 0; font-size: 1.25rem">Encaisser un versement de dette</h2>
+              <p class="field-hint" style="margin: 0.2rem 0 0 0">
+                La somme saisie sera déduite immédiatement du solde débiteur du livreur.
+              </p>
+            </div>
+            <button type="button" class="btn-secondary btn-sm" (click)="modalReglementOuvert.set(false)">
+              ✕
+            </button>
+          </div>
+
+          <div class="field">
+            <label for="livreurSelect">Livreur concerné *</label>
+            <select
+              id="livreurSelect"
+              name="livreurId"
+              [(ngModel)]="formReglement.livreurId"
+              (ngModelChange)="auChangementLivreurReglement($event)"
+              required
+            >
+              <option [ngValue]="null" disabled>Sélectionner le livreur...</option>
+              @for (liv of livreursDisponibles(); track liv.livreurId) {
+                <option [ngValue]="liv.livreurId">
+                  {{ liv.livreurNom }} ({{ liv.livreurTelephone }}) — Reste dû : {{ liv.resteADevoir | number }} FCFA
+                </option>
+              }
+            </select>
+          </div>
+
+          @if (livreurSelectionneReglement(); as lSel) {
+            <div class="recap-box-debt">
+              <div class="recap-debt-item">
+                <span class="recap-label">Dette totale cumulée :</span>
+                <strong>{{ lSel.detteCumulee | number }} FCFA</strong>
+              </div>
+              <div class="recap-debt-item">
+                <span class="recap-label">Déjà remboursé :</span>
+                <span style="color: #059669; font-weight: bold">{{ lSel.totalRegle | number }} FCFA</span>
+              </div>
+              <div class="recap-debt-item is-highlight">
+                <span class="recap-label">Reste actuel à devoir :</span>
+                <span class="recap-debt-val">{{ lSel.resteADevoir | number }} FCFA</span>
+              </div>
+            </div>
+          }
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="montantRegle">Montant versé (FCFA) *</label>
+              <input
+                id="montantRegle"
+                name="montant"
+                type="number"
+                min="100"
+                step="50"
+                [(ngModel)]="formReglement.montant"
+                required
+                placeholder="Ex. 10000"
+              />
+              @if (livreurSelectionneReglement(); as lSel) {
+                @if (lSel.resteADevoir > 0) {
+                  <div style="margin-top: 0.35rem">
+                    <button
+                      type="button"
+                      class="badge badge-accent"
+                      style="border: none; cursor: pointer; font-size: 0.75rem; padding: 0.2rem 0.5rem"
+                      (click)="formReglement.montant = lSel.resteADevoir"
+                    >
+                      Payer tout le reste ({{ lSel.resteADevoir | number }} FCFA)
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="field">
+              <label>Mode de règlement *</label>
+              <div class="custom-payment-select" (click)="toggleDropdownPaiement($event)">
+                <div class="selected-payment-display">
+                  <img [src]="getLogoMode(formReglement.modePaiement)" [alt]="formReglement.modePaiement" class="payment-logo-icon" />
+                  <span class="selected-payment-text">{{ libelleMode(formReglement.modePaiement) }}</span>
+                  <span class="dropdown-chevron" [class.is-rotated]="dropdownPaiementOuvert()">▼</span>
+                </div>
+
+                @if (dropdownPaiementOuvert()) {
+                  <div class="payment-options-menu" (click)="$event.stopPropagation()">
+                    @for (opt of optionsModesPaiement; track opt.valeur) {
+                      <div
+                        class="payment-option-item"
+                        [class.is-selected]="formReglement.modePaiement === opt.valeur"
+                        (click)="choisirModePaiement(opt.valeur)"
+                      >
+                        <div class="payment-option-left">
+                          <img [src]="opt.logo" [alt]="opt.nom" class="payment-logo-icon" />
+                          <span class="payment-option-label">{{ opt.nom }}</span>
+                        </div>
+                        @if (formReglement.modePaiement === opt.valeur) {
+                          <span class="payment-check">✓</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="dateReglement">Date du versement *</label>
+              <input
+                id="dateReglement"
+                name="dateReglement"
+                type="date"
+                [(ngModel)]="formReglement.date"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="remarques">Remarques / Référence reçu</label>
+              <input
+                id="remarques"
+                name="remarques"
+                type="text"
+                [(ngModel)]="formReglement.remarques"
+                placeholder="Ex: Reçu N°402, acompte tournée du matin"
+              />
+            </div>
+          </div>
+
+          @if (livreurSelectionneReglement(); as lSel) {
+            @if (formReglement.montant > 0) {
+              <div class="preview-deduction">
+                <span>Dette restante après déduction :</span>
+                <strong>
+                  {{ calculerNouveauReste(lSel.resteADevoir, formReglement.montant) | number }} FCFA
+                </strong>
+              </div>
+            }
+          }
+
+          <div class="dialog-footer">
+            <button type="button" class="btn-secondary" (click)="modalReglementOuvert.set(false)">
+              Annuler
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              [disabled]="!formReglement.livreurId || formReglement.montant <= 0"
+            >
+              Déduire & Enregistrer le règlement
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- ==============================================================
+         MODAL 2 : AJOUTER UNE DETTE MANUELLE (ÉCART, AVARIE, CRÉANCE)
+         ============================================================== -->
+    @if (modalAjoutDetteOuvert()) {
+      <div class="backdrop" (click)="modalAjoutDetteOuvert.set(false)">
+        <form class="dialog modal-box" (click)="$event.stopPropagation()" (ngSubmit)="enregistrerAjoutDette()">
+          <div class="dialog-header">
+            <div>
+              <h2 style="margin: 0; font-size: 1.25rem">Noter une dette sur un livreur</h2>
+              <p class="field-hint" style="margin: 0.2rem 0 0 0">
+                Imputer un écart de caisse, perte de pains non retournés, ou avance consentie.
+              </p>
+            </div>
+            <button type="button" class="btn-secondary btn-sm" (click)="modalAjoutDetteOuvert.set(false)">
+              ✕
+            </button>
+          </div>
+
+          <div class="field">
+            <label for="livreurDetteSelect">Livreur concerné *</label>
+            <select
+              id="livreurDetteSelect"
+              name="livreurId"
+              [(ngModel)]="formAjoutDette.livreurId"
+              required
+            >
+              <option [ngValue]="null" disabled>Sélectionner le livreur...</option>
+              @for (liv of livreurs(); track liv.id) {
+                <option [ngValue]="liv.id">
+                  {{ liv.nom }} ({{ liv.telephone }})
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="montantDette">Montant de la dette (FCFA) *</label>
+              <input
+                id="montantDette"
+                name="montant"
+                type="number"
+                min="100"
+                step="50"
+                [(ngModel)]="formAjoutDette.montant"
+                required
+                placeholder="Ex. 5000"
+              />
+            </div>
+
+            <div class="field">
+              <label for="dateDette">Date *</label>
+              <input
+                id="dateDette"
+                name="date"
+                type="date"
+                [(ngModel)]="formAjoutDette.date"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="motifDette">Motif de la dette *</label>
+            <input
+              id="motifDette"
+              name="motif"
+              type="text"
+              [(ngModel)]="formAjoutDette.motif"
+              placeholder="Ex: 25 baguettes abîmées non justifiées, reliquat tournée"
+              required
+            />
+          </div>
+
+          <div class="dialog-footer">
+            <button type="button" class="btn-secondary" (click)="modalAjoutDetteOuvert.set(false)">
+              Annuler
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              [disabled]="!formAjoutDette.livreurId || formAjoutDette.montant <= 0 || !formAjoutDette.motif"
+            >
+              Enregistrer la dette
+            </button>
+          </div>
+        </form>
+      </div>
+    }

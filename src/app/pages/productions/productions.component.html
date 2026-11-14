@@ -1,0 +1,297 @@
+<div class="page-header">
+      <div>
+        <h1>Production des fournées</h1>
+        <p class="page-sub">Suivi quotidien des pains sortis du four et contrôle de la farine</p>
+      </div>
+      <div style="display: flex; gap: 0.6rem; align-items: center">
+        <button type="button" class="btn-secondary" (click)="dialogFarineOuvert.set(true)">
+          🌾 + Réception Farine
+        </button>
+        <button type="button" class="btn-primary" (click)="dialogOuvert.set(true)">
+          + Nouvelle fournée
+        </button>
+      </div>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    <div class="stats-grid">
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Pains produits sur la sélection</div>
+            <div class="stat-value">{{ totalQuantite() | number }}</div>
+          </div>
+          <div class="stat-bread-icon-3d" title="Pains dorés sortis du fournil">
+            <img src="images/pain-3d.png" alt="Pain doré 3D" class="stat-bread-img-3d" />
+          </div>
+        </div>
+        <div class="stat-hint">{{ productions().length }} fournée(s) enregistrée(s) • Total des pièces sorties</div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Réserve Farine (Stock)</div>
+            <div class="stat-value" [style.color]="bilanFarine()?.alerteStockBas ? '#dc2626' : 'inherit'">
+              {{ bilanFarine()?.stockFarineSacs ?? 0 }} sacs
+            </div>
+          </div>
+          <div class="stat-icon-wrapper" [class.gold]="!bilanFarine()?.alerteStockBas" style="background: rgba(212, 160, 23, 0.15)">
+            <span class="material-symbols-outlined" style="color: #b45309">grain</span>
+          </div>
+        </div>
+        <div class="stat-hint">
+          Pétri aujourd'hui : <strong>{{ bilanFarine()?.sacsFarineUtilisesAujourdhui ?? 0 }} sacs</strong> • 
+          Autonomie : <strong>~{{ bilanFarine()?.joursAutonomieEstimes ?? 0 }}j</strong>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Valeur de vente théorique</div>
+            <div class="stat-value">{{ totalValeurVente() | number }} FCFA</div>
+          </div>
+          <div class="stat-icon-wrapper gold" title="Chiffre d'affaires potentiel">
+            <span class="material-symbols-outlined">payments</span>
+          </div>
+        </div>
+        <div class="stat-hint">Recette brute calculée au tarif de vente standard</div>
+      </div>
+
+      <div class="card">
+        <div class="stat-card-header">
+          <div>
+            <div class="stat-label">Coût de revient estimé</div>
+            <div class="stat-value">{{ totalCoutRevient() | number }} FCFA</div>
+          </div>
+          <div class="stat-icon-wrapper success" title="Rentabilité et marge brute">
+            <span class="material-symbols-outlined">trending_up</span>
+          </div>
+        </div>
+        <div class="stat-hint">Marge prévisionnelle : <strong>{{ totalValeurVente() - totalCoutRevient() | number }} FCFA</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="field">
+          <label for="filtreDateProd">Filtrer par date</label>
+          <input
+            id="filtreDateProd"
+            type="date"
+            [ngModel]="dateFiltre()"
+            (ngModelChange)="changerDate($event)"
+          />
+        </div>
+        @if (dateFiltre()) {
+          <button
+            type="button"
+            class="btn-secondary btn-sm"
+            style="align-self: flex-end"
+            (click)="changerDate('')"
+          >
+            Voir tout l'historique
+          </button>
+        }
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Remarques</th>
+              <th>Farine utilisée</th>
+              <th>Rendement</th>
+              <th>Détail des pains</th>
+              <th class="num">Total pièces</th>
+              <th class="num">Valeur vente</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of productions(); track p.id) {
+              <tr>
+                <td>
+                  <strong>{{ p.dateProduction }}</strong>
+                </td>
+                <td>{{ p.remarques || '—' }}</td>
+                <td>
+                  @if (p.sacsFarineUtilises && p.sacsFarineUtilises > 0) {
+                    <span class="badge" style="background: rgba(139, 90, 43, 0.12); color: #6e431d; font-weight: 700">
+                      🌾 {{ p.sacsFarineUtilises }} sacs ({{ p.sacsFarineUtilises * 50 }} kg)
+                    </span>
+                  } @else {
+                    <span style="color: #9e9288">—</span>
+                  }
+                </td>
+                <td>
+                  @if (p.rendementObtenu && p.rendementObtenu > 0) {
+                    <strong>{{ p.rendementObtenu }}</strong> <small>pains/sac</small>
+                  } @else {
+                    <span style="color: #9e9288">—</span>
+                  }
+                </td>
+                <td>
+                  @for (l of p.lignes; track l.produitId) {
+                    <span class="badge badge-accent" style="margin-right: 0.35rem">
+                      {{ l.produitNom }} : {{ l.quantite | number }}
+                    </span>
+                  }
+                </td>
+                <td class="num">
+                  <strong>{{ p.totalQuantite | number }}</strong>
+                </td>
+                <td class="num">{{ p.valeurVenteTotale | number }} FCFA</td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="btn-danger btn-sm"
+                    (click)="supprimer(p)"
+                  >
+                    Supprimer
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="empty">Aucune fournée enregistrée pour cette date.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TABLE DES ENTRÉES / APPROVISIONNEMENTS EN FARINE (TRAÇABILITÉ GÉRANT / PDG) -->
+    <div class="card" style="margin-top: 1.5rem">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 800; color: #2C1810; margin: 0; display: flex; align-items: center; gap: 0.5rem">
+            🌾 Historique des réceptions de farine
+          </h2>
+          <p class="page-sub" style="margin-top: 0.2rem">Traçabilité complète des réceptions de farine et synchronisation directe Gérant / PDG</p>
+        </div>
+        <button type="button" class="btn-secondary btn-sm" (click)="dialogFarineOuvert.set(true)">
+          🌾 + Enregistrer une entrée
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Quantité reçue</th>
+              <th>Fournisseur / Meunerie</th>
+              <th class="num">Montant total</th>
+              <th>Ajouté par (Auteur & Rôle)</th>
+              <th>Remarques</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (a of approvisionnements(); track a.id) {
+              <tr>
+                <td>
+                  <strong>{{ a.dateApprovisionnement }}</strong>
+                </td>
+                <td>
+                  <span class="badge" style="background: rgba(139, 90, 43, 0.12); color: #6e431d; font-weight: 700">
+                    +{{ a.nombreSacs }} sacs ({{ a.nombreSacs * 50 }} kg)
+                  </span>
+                </td>
+                <td>{{ a.fournisseur }}</td>
+                <td class="num">
+                  @if (a.prixTotal && a.prixTotal > 0) {
+                    <strong>{{ a.prixTotal | number }} FCFA</strong>
+                  } @else {
+                    <span style="color: #9e9288">—</span>
+                  }
+                </td>
+                <td>
+                  @if (a.auteurRole === 'PDG') {
+                    <span class="badge" style="background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                      👑 {{ a.auteurNom || 'PDG' }} (PDG)
+                    </span>
+                  } @else {
+                    <span class="badge" style="background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                      👨‍🍳 {{ a.auteurNom || 'Gérant' }} (Gérant)
+                    </span>
+                  }
+                </td>
+                <td style="color: #6E6259; font-size: 0.9rem">{{ a.remarques || '—' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="empty">Aucun approvisionnement en farine enregistré pour le moment.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    @if (dialogOuvert()) {
+      <app-production-dialog
+        [produits]="produitsActifs()"
+        [dateParDefaut]="dateFiltre()"
+        (fermer)="dialogOuvert.set(false)"
+        (enregistre)="apresCreation()"
+      />
+    }
+
+    @if (dialogFarineOuvert()) {
+      <div class="backdrop" (click)="dialogFarineOuvert.set(false)">
+        <form class="dialog" (click)="$event.stopPropagation()" (ngSubmit)="enregistrerFarine()">
+          <div class="dialog-header">
+            <h2>🌾 Réception de sacs de farine</h2>
+            <button type="button" class="btn-secondary btn-sm" (click)="dialogFarineOuvert.set(false)">Fermer</button>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="nbSacs">Nombre de sacs reçus (50 kg) *</label>
+              <input id="nbSacs" type="number" min="1" required [(ngModel)]="nombreSacsFarine" name="nbSacs" placeholder="Ex. 50" />
+            </div>
+            <div class="field">
+              <label for="fournFarine">Fournisseur / Meunerie</label>
+              <input id="fournFarine" type="text" [(ngModel)]="fournisseurFarine" name="fournFarine" placeholder="Ex. Grands Moulins du Mali" />
+            </div>
+            <div class="field">
+              <label for="prixUnitFarine">Prix d'un sac de farine (FCFA) *</label>
+              <input id="prixUnitFarine" type="number" min="0" step="500" required [(ngModel)]="prixUnitaireFarine" name="prixUnitFarine" placeholder="Ex. 22500" />
+            </div>
+            <div class="field">
+              <label for="prixTotalFarine">Montant total calculé (FCFA)</label>
+              <input
+                id="prixTotalFarine"
+                type="text"
+                readonly
+                [value]="(montantTotalFarine | number) + ' FCFA'"
+                style="background: #FDFBF7; font-weight: 800; color: #8B5A2B; cursor: not-allowed;"
+                title="Calculé automatiquement : Nombre de sacs × Prix unitaire"
+              />
+            </div>
+          </div>
+
+          <!-- Note récapitulative de calcul automatique anti-erreur -->
+          <div style="margin: 0.2rem 0 1rem 0; padding: 0.6rem 0.9rem; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 10px; font-size: 0.82rem; color: #78350F; display: flex; align-items: center; justify-content: space-between;">
+            <span>
+              💡 <strong>Calcul automatique :</strong> {{ nombreSacsFarine || 0 }} sacs × {{ (prixUnitaireFarine || 0) | number }} FCFA
+            </span>
+            <strong style="font-size: 0.95rem; color: #B45309">
+              = {{ montantTotalFarine | number }} FCFA
+            </strong>
+          </div>
+          <div class="dialog-footer">
+            <button type="button" class="btn-secondary" (click)="dialogFarineOuvert.set(false)">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="enCoursFarine()">
+              {{ enCoursFarine() ? 'Enregistrement…' : 'Valider l\'entrée de farine' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }

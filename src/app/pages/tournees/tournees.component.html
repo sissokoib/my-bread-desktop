@@ -1,0 +1,294 @@
+<div class="page-header">
+      <div>
+        <h1>Pains livrés</h1>
+        <p class="page-sub">
+          Suivi des pains sortis du fournil, livraisons clients (baptêmes, mariages, événements) et décomptes
+        </p>
+      </div>
+      <button type="button" class="btn-primary" (click)="dialogCreation.set(true)">
+        + Enregistrer des pains livrés
+      </button>
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    <!-- Barre d'outils et filtre par date -->
+    <div class="card" style="margin-bottom: 1.25rem">
+      <div class="toolbar" style="margin-bottom: 0">
+        <div class="field">
+          <label for="dateTournees">Date des opérations</label>
+          <input
+            id="dateTournees"
+            type="date"
+            [ngModel]="dateFiltre()"
+            (ngModelChange)="changerDate($event)"
+          />
+        </div>
+        @if (dateFiltre()) {
+          <button
+            type="button"
+            class="btn-secondary btn-sm"
+            style="align-self: flex-end"
+            (click)="changerDate('')"
+          >
+            Toutes les dates
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         SECTION 1 : RECENSEMENT DES PAINS COMMANDÉS À LIVRER
+         ==================================================================== -->
+    <div class="card" style="margin-bottom: 1.25rem; border-left: 4px solid #F59E0B">
+      <div class="page-header" style="margin-bottom: 0.85rem">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem">
+            <span style="font-size: 1.25rem" aria-hidden="true">🥖</span>
+            <h2 style="margin: 0">Pains commandés à livrer ({{ commandesALivrer().length }})</h2>
+          </div>
+          <p class="page-sub" style="margin-top: 0.25rem">
+            Recensement des commandes validées en attente de chargement et de distribution
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap">
+          <span class="badge badge-accent" style="font-size: 0.82rem; padding: 0.35rem 0.75rem">
+            Total : {{ totalPainsALivrer() | number }} pains à livrer
+          </span>
+          <span class="badge badge-ok" style="font-size: 0.82rem; padding: 0.35rem 0.75rem">
+            {{ totalMontantALivrer() | number }} FCFA
+          </span>
+        </div>
+      </div>
+
+      <!-- Synthèse rapide par variété de pain commandé -->
+      @if (recapPainsParProduit().length > 0) {
+        <div
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            background: #FFFBEB;
+            border: 1px solid #FDE68A;
+            border-radius: 10px;
+          "
+        >
+          <span
+            style="
+              font-size: 0.78rem;
+              font-weight: 750;
+              color: #92400E;
+              display: inline-flex;
+              align-items: center;
+              gap: 0.3rem;
+            "
+          >
+            📋 Chargement prévisionnel requis :
+          </span>
+          @for (item of recapPainsParProduit(); track item.nom) {
+            <span
+              class="badge"
+              style="
+                background: #FFFFFF;
+                border: 1px solid #FCD34D;
+                color: #78350F;
+                font-weight: 700;
+                font-size: 0.76rem;
+              "
+            >
+              {{ item.nom }} : <strong>{{ item.quantite | number }} u.</strong>
+            </span>
+          }
+        </div>
+      }
+
+      <!-- Tableau des commandes de pains à livrer -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date souhaitée</th>
+              <th>Client / Événement</th>
+              <th>Livreur assigné</th>
+              <th>Pains commandés</th>
+              <th class="num">Total pains</th>
+              <th class="num">Montant</th>
+              <th>Statut</th>
+              <th style="text-align: right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of commandesALivrer(); track c.id) {
+              <tr>
+                <td>
+                  <strong style="font-size: 0.85rem">{{ c.dateLivraisonSouhaitee }}</strong>
+                </td>
+                <td>
+                  <div style="font-weight: 700; color: var(--text-primary)">
+                    {{ c.clientNomBoutique || 'Livraison événement / client' }}
+                  </div>
+                  @if (c.remarques) {
+                    <span style="font-size: 0.72rem; color: #92400E; display: block">{{ c.remarques }}</span>
+                  }
+                </td>
+                <td>
+                  @if (c.livreurNom) {
+                    <span style="font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem">
+                      <span class="material-symbols-outlined" style="font-size: 1.05rem; color: var(--primary)">local_shipping</span>
+                      {{ c.livreurNom }}
+                    </span>
+                  } @else {
+                    <span class="badge badge-muted">Non assigné</span>
+                  }
+                </td>
+                <td>
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.3rem">
+                    @for (l of c.lignes; track l.produitId) {
+                      <span class="badge badge-accent" style="font-size: 0.74rem">
+                        {{ l.produitNom }} : <strong>{{ l.quantite }}</strong>
+                      </span>
+                    }
+                  </div>
+                </td>
+                <td class="num">
+                  <strong style="color: var(--primary-dark); font-size: 0.92rem">
+                    {{ sommePainsCommande(c) | number }}
+                  </strong>
+                </td>
+                <td class="num">
+                  <strong>{{ c.montantTotal | number }} FCFA</strong>
+                </td>
+                <td>
+                  <span
+                    class="badge"
+                    [class.badge-warn]="c.statut === 'EN_ATTENTE'"
+                    [class.badge-ok]="c.statut === 'VALIDEE' || c.statut === 'PREPAREE' || c.statut === 'LIVREE'"
+                  >
+                    {{ libelleStatutCommande(c.statut) }}
+                  </span>
+                </td>
+                <td style="text-align: right">
+                  <button
+                    type="button"
+                    class="btn-primary btn-sm"
+                    style="font-size: 0.75rem; padding: 0.3rem 0.65rem"
+                    (click)="marquerCommandeLivree(c)"
+                    title="Marquer cette commande comme livrée"
+                  >
+                    ✓ Marquer livrée
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="empty">
+                  Aucune commande de pain en attente de livraison pour cette sélection.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         SECTION 2 : SORTIES DE PAIN & LIVRAISONS
+         ==================================================================== -->
+    @for (t of tournees(); track t.id) {
+      <div class="card" style="margin-bottom: 1rem">
+        <div class="page-header" style="margin-bottom: 0.75rem">
+          <div>
+            <h2 style="display: flex; align-items: center; gap: 0.4rem">
+              <span class="material-symbols-outlined" style="font-size: 1.35rem; color: var(--primary)">local_shipping</span>
+              {{ t.livreurNom }} · <span class="page-sub">{{ t.dateTournee }}</span>
+            </h2>
+            <p class="page-sub">
+              Valeur des pains :
+              <strong>{{ t.totalVentes | number }} FCFA</strong> · Encaissé :
+              <strong>{{ t.totalEncaisse | number }} FCFA</strong>
+              @if (t.remarques) {
+                · <strong style="color: #92400E">{{ t.remarques }}</strong>
+              }
+            </p>
+          </div>
+
+          <div class="actions">
+            @if (t.statut === 'CLOTUREE') {
+              <span class="badge badge-ok">✓ Soldé &amp; Conforme</span>
+            } @else {
+              <span class="badge badge-accent">En cours</span>
+              <button
+                type="button"
+                class="btn-secondary btn-sm"
+                (click)="tourneePourCloture.set(t)"
+                title="Déduire les retours d'invendus pour ajuster le décompte"
+              >
+                ↺ Déduire des retours
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Produit</th>
+                <th class="num">Pains sortis</th>
+                <th class="num">Retours d'invendus</th>
+                <th class="num">Pains facturés</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of t.bilansProduits; track b.produitId) {
+                <tr>
+                  <td>
+                    <strong>{{ b.produitNom }}</strong>
+                  </td>
+                  <td class="num">{{ b.quantiteChargee | number }}</td>
+                  <td class="num">
+                    @if (b.quantiteRetournee > 0) {
+                      <span class="badge badge-warn">-{{ b.quantiteRetournee | number }}</span>
+                    } @else {
+                      0
+                    }
+                  </td>
+                  <td class="num">
+                    <strong style="color: var(--primary-dark)">
+                      {{ (b.quantiteChargee - b.quantiteRetournee) | number }}
+                    </strong>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @empty {
+      <div class="card empty" style="margin-bottom: 1.25rem">
+        Aucun pain livré enregistré pour cette sélection.
+      </div>
+    }
+
+    @if (dialogCreation()) {
+      <app-tournee-dialog
+        [livreurs]="livreursActifs()"
+        [produits]="produitsActifs()"
+        [dateParDefaut]="dateFiltre()"
+        (fermer)="dialogCreation.set(false)"
+        (enregistre)="apresAction()"
+      />
+    }
+
+    @if (tourneePourCloture(); as tc) {
+      <app-tournee-cloture-dialog
+        [tournee]="tc"
+        (fermer)="tourneePourCloture.set(null)"
+        (enregistre)="apresAction()"
+      />
+    }

@@ -1,0 +1,74 @@
+<!-- HEADER PARTAGÉ (TOPBAR) -->
+<header class="topbar">
+  <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap">
+    <div class="topbar-welcome">
+      Bienvenue {{ utilisateur()?.nom || 'Gérant' }} !
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <!-- Raccourci rapide commandes -->
+    <a routerLink="/commandes" class="quick-action-pill gold" title="Gérer les commandes">
+      <svg
+        viewBox="0 0 24 24"
+        width="15"
+        height="15"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+        <rect x="8" y="2" width="8" height="4" rx="1" />
+      </svg>
+      <span>Commandes</span>
+    </a>
+
+    <!-- Barre de recherche globale de modules -->
+    <form class="search-pill" (ngSubmit)="executerRechercheRapide()">
+      <input
+        type="text"
+        name="rechercheRapide"
+        [(ngModel)]="termeRecherche"
+        placeholder="Aller à : fournée, client, pain, tournée..."
+        aria-label="Rechercher un module"
+      />
+      <button
+        type="submit"
+        class="search-pill-btn"
+        title="Rechercher et ouvrir le module"
+        style="border: none; border-left: 1px solid var(--border); border-radius: 0"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      </button>
+    </form>
+
+    @if (utilisateur(); as u) {
+      <a
+        routerLink="/profil"
+        class="topbar-profile-chip"
+        title="Voir mon profil administrateur"
+      >
+        @if (urlPhoto(u.photoProfil); as srcPhoto) {
+          <img [src]="srcPhoto" [alt]="u.nom" class="topbar-profile-img" />
+        } @else {
+          <span class="topbar-profile-initials">{{ initiales(u.nom) }}</span>
+        }
+        <span>Profil</span>
+      </a>
+    }
+  </div>
+</header>

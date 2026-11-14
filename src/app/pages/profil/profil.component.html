@@ -1,0 +1,390 @@
+<div class="page-header">
+      <div>
+        <h1>Mon Profil Administrateur</h1>
+        <p class="page-sub">
+          Consultez vos informations personnelles, personnalisez votre photo de profil et gérez vos accès
+        </p>
+      </div>
+      @if (utilisateur(); as u) {
+        <span class="badge badge-accent" style="padding: 0.42rem 0.9rem; font-size: 0.8rem">
+          Compte Actif • {{ libelleRole(u.role) }}
+        </span>
+      }
+    </div>
+
+    @if (erreur()) {
+      <div class="alert alert-error">{{ erreur() }}</div>
+    }
+
+    @if (succes()) {
+      <div
+        class="alert"
+        style="
+          background: var(--ok-bg);
+          color: #166534;
+          border: 1px solid #86EFAC;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 0.55rem;
+        "
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+        <span>{{ succes() }}</span>
+      </div>
+    }
+
+    @if (utilisateur(); as u) {
+      <div class="profile-page-grid">
+        <!-- ================================================================
+             COLONNE GAUCHE : CARTE D'IDENTITÉ & UPLOAD PHOTO DE PROFIL
+             ================================================================ -->
+        <div class="card profile-id-card" style="padding: 0; overflow: hidden">
+          <!-- Bandeau supérieur marron & doré boulangerie -->
+          <div class="profile-id-banner">
+            <svg
+              viewBox="0 0 180 90"
+              width="140"
+              height="70"
+              fill="none"
+              style="position: absolute; right: 10px; bottom: -8px; opacity: 0.45; pointer-events: none"
+              aria-hidden="true"
+            >
+              <path
+                d="M110 90 C114 55, 128 25, 146 4 C150 35, 142 66, 130 90 Z"
+                fill="#F4C542"
+              />
+              <path
+                d="M136 90 C142 52, 156 20, 174 2 C176 36, 168 68, 156 90 Z"
+                fill="#D4A017"
+              />
+            </svg>
+            <span
+              style="
+                font-size: 0.72rem;
+                font-weight: 800;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: #FDE68A;
+              "
+            >
+              Carte d'identité My Bread
+            </span>
+          </div>
+
+          <div style="padding: 0 1.5rem 1.5rem; text-align: center">
+            <!-- Grand Avatar avec bouton Caméra -->
+            <div class="profile-avatar-upload-wrap">
+              <div class="profile-avatar-lg-ring">
+                @if (urlPhotoAffichee()) {
+                  <img
+                    [src]="urlPhotoAffichee()!"
+                    alt="Photo de profil de {{ u.nom }}"
+                    class="profile-avatar-img"
+                  />
+                } @else {
+                  <div class="profile-avatar-lg-fallback">{{ initiales(nom || u.nom) }}</div>
+                }
+              </div>
+
+              <label
+                for="inputPhotoProfil"
+                class="profile-camera-btn"
+                title="Uploader une nouvelle photo de profil dans le dossier uploads"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"
+                  />
+                  <circle cx="12" cy="13" r="3" />
+                </svg>
+              </label>
+              <input
+                id="inputPhotoProfil"
+                type="file"
+                accept="image/*"
+                style="display: none"
+                (change)="surSelectionFichier($event)"
+              />
+            </div>
+
+            <h2 style="font-size: 1.25rem; margin-top: 0.55rem">{{ nom || u.nom }}</h2>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.15rem">
+              {{ libelleRole(u.role) }} • {{ telephone || u.telephone }}
+            </p>
+
+            <!-- Boutons d'action Photo -->
+            <div
+              style="
+                display: flex;
+                justify-content: center;
+                gap: 0.55rem;
+                flex-wrap: wrap;
+                margin-top: 1rem;
+              "
+            >
+              <label for="inputPhotoProfil" class="btn btn-primary btn-sm" style="cursor: pointer">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span>Uploader une photo</span>
+              </label>
+
+              @if (u.photoProfil) {
+                <button
+                  type="button"
+                  class="btn-danger btn-sm"
+                  [disabled]="enCours()"
+                  (click)="supprimerPhoto()"
+                >
+                  Retirer la photo
+                </button>
+              }
+            </div>
+
+            <!-- Avatars Boulangerie rapides en 1 clic -->
+            <div
+              style="
+                margin-top: 1.1rem;
+                padding-top: 0.95rem;
+                border-top: 1px dashed var(--border);
+              "
+            >
+              <div
+                style="
+                  font-size: 0.74rem;
+                  font-weight: 650;
+                  color: var(--text-secondary);
+                  margin-bottom: 0.55rem;
+                "
+              >
+                Ou choisir un emblème boulangerie :
+              </div>
+              <div style="display: flex; justify-content: center; gap: 0.6rem">
+                @for (preset of avatarsPredefinis; track preset.label) {
+                  <button
+                    type="button"
+                    class="preset-avatar-btn"
+                    [title]="preset.label"
+                    [disabled]="enCours()"
+                    (click)="appliquerAvatarPredefini(preset.dataUrl)"
+                  >
+                    <img [src]="preset.dataUrl" [alt]="preset.label" />
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Récapitulatif des informations du compte -->
+            <div class="profile-info-list">
+              <div class="profile-info-row">
+                <span class="profile-info-label">Identifiant compte</span>
+                <span class="profile-info-val">#{{ u.id }}</span>
+              </div>
+              <div class="profile-info-row">
+                <span class="profile-info-label">Nom complet</span>
+                <span class="profile-info-val">{{ u.nom }}</span>
+              </div>
+              <div class="profile-info-row">
+                <span class="profile-info-label">Téléphone (Login)</span>
+                <span class="profile-info-val">{{ u.telephone }}</span>
+              </div>
+              <div class="profile-info-row">
+                <span class="profile-info-label">Rôle attribué</span>
+                <span class="badge badge-accent">{{ libelleRole(u.role) }}</span>
+              </div>
+              <div class="profile-info-row">
+                <span class="profile-info-label">État de l'accès</span>
+                <span class="badge badge-ok">Actif & Autorisé</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================================================================
+             COLONNE DROITE : MODIFICATION DES INFORMATIONS & MOT DE PASSE
+             ================================================================ -->
+        <form class="card" (ngSubmit)="enregistrerProfil()">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 0.65rem;
+              margin-bottom: 1.15rem;
+              padding-bottom: 0.85rem;
+              border-bottom: 1px solid var(--border);
+            "
+          >
+            <span
+              style="
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                background: #FEF3C7;
+                color: var(--primary-dark);
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+              "
+              aria-hidden="true"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="19"
+                height="19"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </span>
+            <div>
+              <h2 style="font-size: 1.08rem; margin: 0">Modifier mes informations</h2>
+              <p class="field-hint" style="margin-top: 2px">
+                Mettez à jour votre identité, votre numéro de connexion ou votre mot de passe
+              </p>
+            </div>
+          </div>
+
+          <div class="form-grid" style="margin-bottom: 1.25rem">
+            <div class="field">
+              <label for="nomProfil">Nom complet de l'administrateur</label>
+              <input
+                id="nomProfil"
+                name="nom"
+                type="text"
+                required
+                [(ngModel)]="nom"
+                placeholder="Ex. Administrateur My Bread"
+              />
+              <span class="field-hint">Affiché dans la barre latérale et le message d'accueil</span>
+            </div>
+
+            <div class="field">
+              <label for="telProfil">Téléphone / Identifiant de connexion</label>
+              <input
+                id="telProfil"
+                name="telephone"
+                type="tel"
+                required
+                [(ngModel)]="telephone"
+                placeholder="Ex. 70000000"
+              />
+              <span class="field-hint">Numéro utilisé pour vous connecter au portail</span>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 1.35rem;
+              margin-bottom: 1rem;
+              padding-top: 1.1rem;
+              border-top: 1px solid var(--border);
+            "
+          >
+            <h2 style="font-size: 0.98rem; margin-bottom: 0.25rem">
+              Mot de passe
+            </h2>
+            <p class="field-hint" style="margin-bottom: 0.95rem">
+              Laissez ces champs vides si vous ne souhaitez pas changer votre mot de passe actuel.
+            </p>
+
+            <div class="form-grid">
+              <div class="field">
+                <label for="nouveauMdp">Nouveau mot de passe</label>
+                <div style="position: relative; display: flex; align-items: center">
+                  <input
+                    id="nouveauMdp"
+                    name="nouveauMotDePasse"
+                    [type]="afficherMdp() ? 'text' : 'password'"
+                    [(ngModel)]="nouveauMotDePasse"
+                    placeholder="Au moins 6 caractères"
+                    style="width: 100%; padding-right: 2.4rem"
+                  />
+                  <button
+                    type="button"
+                    (click)="afficherMdp.set(!afficherMdp())"
+                    style="
+                      position: absolute;
+                      right: 6px;
+                      background: transparent;
+                      border: none;
+                      padding: 4px;
+                      color: var(--text-secondary);
+                    "
+                    title="Afficher / masquer"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="confirmerMdp">Confirmer le nouveau mot de passe</label>
+                <input
+                  id="confirmerMdp"
+                  name="confirmationMotDePasse"
+                  [type]="afficherMdp() ? 'text' : 'password'"
+                  [(ngModel)]="confirmationMotDePasse"
+                  placeholder="Répétez le nouveau mot de passe"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn-ghost" (click)="reinitialiserFormulaire()">
+              Réinitialiser
+            </button>
+            <button type="submit" class="btn-primary" [disabled]="enCours()">
+              {{ enCours() ? 'Enregistrement…' : 'Enregistrer les modifications' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
