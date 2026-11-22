@@ -12,7 +12,7 @@
     "electron:dev": "wait-on http-get://localhost:4200 && electron .",
     "desktop:run": "npm run build && electron .",
     "desktop:dist": "npm run build && electron-builder --win nsis",
-    "desktop:mac": "npm run build && electron-builder --mac dmg zip",
+    "desktop:mac": "npm run build && electron-builder --mac dmg zip --publish never",
     "desktop:publish": "npm run build && electron-builder --win nsis --publish always",
     "desktop:publish:mac": "npm run build && electron-builder --mac dmg zip --publish always",
     "watch": "ng build --watch --configuration development",
@@ -85,6 +85,8 @@
       "icon": "electron/icon.png",
       "category": "public.app-category.business",
       "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
       "target": [
         {
           "target": "dmg",
@@ -104,7 +106,7 @@
     },
     "dmg": {
       "title": "My Bread",
-      "icon": "electron/icon.png"
+      "sign": false
     }
   }
 }
