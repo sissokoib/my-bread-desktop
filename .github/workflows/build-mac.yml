@@ -1,8 +1,11 @@
 name: Build macOS Desktop (.dmg)
 
 on:
-  # Déclenchement automatique lors de la création d'un tag de version (ex: v1.1.0) ou d'une release
+  # Déclenchement automatique à chaque git push sur sissoko/main ou création de tag/release
   push:
+    branches:
+      - sissoko
+      - main
     tags:
       - 'v*'
   release:
@@ -33,9 +36,8 @@ jobs:
 
       - name: Compiler l'application Angular et générer les installateurs macOS (.dmg / .zip)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npm run desktop:publish:mac
+        run: npm run desktop:mac
 
       - name: Sauvegarder les fichiers .dmg dans les artefacts GitHub Actions
         uses: actions/upload-artifact@v4
@@ -44,3 +46,13 @@ jobs:
           path: |
             dist_desktop/*.dmg
             dist_desktop/*.zip
+
+      - name: Attacher les fichiers .dmg à la Release GitHub
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "My Bread $TAG" --notes "Version $TAG (Windows & macOS)"
+          gh release upload "$TAG" dist_desktop/*.dmg dist_desktop/*.zip --clobber
