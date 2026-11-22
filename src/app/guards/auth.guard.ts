@@ -9,14 +9,6 @@ export const authGuard: CanActivateFn = () => {
   if (!auth.connecte()) {
     return router.createUrlTree(['/connexion']);
   }
-  if (auth.utilisateur()?.role === 'PDG') {
-    auth.logout(false);
-    return router.createUrlTree(['/connexion'], {
-      queryParams: {
-        message: "L'accès PDG est réservé exclusivement à l'application mobile My Bread. Veuillez vous connecter depuis votre téléphone.",
-      },
-    });
-  }
   return true;
 };
 

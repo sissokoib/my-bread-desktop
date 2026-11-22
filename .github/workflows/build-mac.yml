@@ -1,0 +1,46 @@
+name: Build macOS Desktop (.dmg)
+
+on:
+  # Déclenchement automatique lors de la création d'un tag de version (ex: v1.1.0) ou d'une release
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published, created]
+  # Permet aussi de lancer la compilation manuellement en 1 clic depuis l'onglet "Actions" sur GitHub
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    name: Compiler My Bread pour macOS (Intel & Apple Silicon)
+    runs-on: macos-latest
+
+    steps:
+      - name: Récupérer le code source
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Installer les dépendances
+        run: npm install
+
+      - name: Compiler l'application Angular et générer les installateurs macOS (.dmg / .zip)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npm run desktop:publish:mac
+
+      - name: Sauvegarder les fichiers .dmg dans les artefacts GitHub Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: My-Bread-macOS-Installers
+          path: |
+            dist_desktop/*.dmg
+            dist_desktop/*.zip

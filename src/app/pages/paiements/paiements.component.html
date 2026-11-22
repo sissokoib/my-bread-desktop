@@ -24,7 +24,10 @@
 
     @if (notificationSucces()) {
       <div class="alert alert-success" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 0.8rem 1rem; border-radius: 12px; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center">
-        <span>✅ {{ notificationSucces() }}</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px">
+          <span class="material-symbols-outlined" style="font-size: 1.15rem">check_circle</span>
+          {{ notificationSucces() }}
+        </span>
         <button type="button" style="background: none; border: none; cursor: pointer; color: #065F46; font-weight: bold" (click)="notificationSucces.set(null)">✕</button>
       </div>
     }
@@ -87,12 +90,13 @@
             type="button"
             class="tab-btn"
             (click)="filtreDebiteursSeulement.set(true)"
-            style="padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s"
+            style="padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px"
             [style.background]="filtreDebiteursSeulement() ? '#FFFFFF' : 'transparent'"
             [style.boxShadow]="filtreDebiteursSeulement() ? '0 1px 3px rgba(0,0,0,0.12)' : 'none'"
             [style.color]="filtreDebiteursSeulement() ? '#DC2626' : '#6B7280'"
           >
-            ⚠️ Dettes actives en cours ({{ nombreDebiteurs() }})
+            <span class="material-symbols-outlined" style="font-size: 1rem">warning</span>
+            Dettes actives en cours ({{ nombreDebiteurs() }})
           </button>
           <button
             type="button"
@@ -181,9 +185,15 @@
                 </td>
                 <td>
                   @if (d.resteADevoir <= 0) {
-                    <span class="badge badge-ok">✅ Soldé (Archivé)</span>
+                    <span class="badge badge-ok" style="display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 0.95rem">check_circle</span>
+                      Soldé (Archivé)
+                    </span>
                   } @else {
-                    <span class="badge badge-warn">⚠️ Dette active</span>
+                    <span class="badge badge-warn" style="display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 0.95rem">warning</span>
+                      Dette active
+                    </span>
                   }
                 </td>
                 <td class="actions" style="text-align: right">
@@ -216,7 +226,7 @@
                 <td colspan="9" class="empty" style="padding: 2.25rem 1rem; text-align: center">
                   @if (filtreDebiteursSeulement()) {
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem">
-                      <span style="font-size: 2.2rem">🎉</span>
+                      <span class="material-symbols-outlined" style="font-size: 2.4rem; color: #059669">task_alt</span>
                       <strong style="color: #059669; font-size: 1.1rem">Aucune dette active en cours !</strong>
                       <span class="field-hint">Tous les comptes livreurs sont soldés et à jour. Retrouvez l'historique complet des versements dans le journal ci-dessous.</span>
                     </div>

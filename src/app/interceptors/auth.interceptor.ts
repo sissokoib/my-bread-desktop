@@ -18,13 +18,14 @@ export const authInterceptor: HttpInterceptorFn = (requete, suivant) => {
   return suivant(requeteAuthentifiee).pipe(
     catchError((erreur: HttpErrorResponse) => {
       if (appelApi && !requete.url.endsWith('/auth/login')) {
-        // Ne JAMAIS déconnecter brutalement si l'erreur concerne une opération d'administration ou de prolongation, ou si l'utilisateur est sur le back-office super-admin
+        // Ne JAMAIS déconnecter brutalement si l'erreur concerne une opération d'administration, de prolongation, le module farine ou le back-office super-admin
         if (
           requete.url.includes('/super-admin') ||
           requete.url.includes('/prolonger') ||
+          requete.url.includes('/farine') ||
           router.url.includes('super-admin')
         ) {
-          console.warn('Erreur sur requête d administration (session préservée) :', requete.url, erreur.status);
+          console.warn('Erreur sur requête spécifique (session préservée) :', requete.url, erreur.status);
           return throwError(() => erreur);
         }
 

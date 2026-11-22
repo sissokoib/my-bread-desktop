@@ -2,7 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProduitDialogComponent } from '../../dialogs/produit-dialog.component';
-import { Produit } from '../../models/produit.model';
+import { Produit, obtenirPrixLivreur } from '../../models/produit.model';
 import { messageErreur } from '../../services/message-erreur';
 import { ProduitService } from '../../services/produit.service';
 
@@ -35,6 +35,10 @@ export class ProduitsComponent implements OnInit {
     this.charger();
   }
 
+  protected tarifLivreur(p: Produit): number {
+    return p.prixLivreur ?? obtenirPrixLivreur(p.id, p.prixVente);
+  }
+
   protected ouvrirCreation(): void {
     this.produitSelectionne.set(null);
     this.dialogOuvert.set(true);
@@ -53,11 +57,15 @@ export class ProduitsComponent implements OnInit {
   private charger(): void {
     this.service.lister().subscribe({
       next: (liste) => {
-        this.produits.set(liste);
+        this.produits.set(
+          liste.map((p) => ({
+            ...p,
+            prixLivreur: obtenirPrixLivreur(p.id, p.prixVente),
+          })),
+        );
         this.erreur.set(null);
       },
       error: (err) => this.erreur.set(messageErreur(err)),
     });
   }
 }
-

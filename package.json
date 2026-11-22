@@ -1,6 +1,8 @@
 {
   "name": "my-bread",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "My Bread — Logiciel de Gestion de Boulangerie Artisanale",
+  "author": "My Bread",
   "main": "electron/main.js",
   "scripts": {
     "ng": "ng",
@@ -10,7 +12,9 @@
     "electron:dev": "wait-on http-get://localhost:4200 && electron .",
     "desktop:run": "npm run build && electron .",
     "desktop:dist": "npm run build && electron-builder --win nsis",
+    "desktop:mac": "npm run build && electron-builder --mac dmg zip",
     "desktop:publish": "npm run build && electron-builder --win nsis --publish always",
+    "desktop:publish:mac": "npm run build && electron-builder --mac dmg zip --publish always",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -76,6 +80,31 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "My Bread"
+    },
+    "mac": {
+      "icon": "electron/icon.png",
+      "category": "public.app-category.business",
+      "identity": null,
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "My Bread",
+      "icon": "electron/icon.png"
     }
   }
 }

@@ -3,6 +3,7 @@ import { authGuard } from './guards/auth.guard';
 import { roleGuard } from './guards/role.guard';
 import { LayoutComponent } from './layout/layout.component';
 import { BulletinsComponent } from './pages/bulletins/bulletins.component';
+import { CaisseComponent } from './pages/caisse/caisse.component';
 import { CommandesComponent } from './pages/commandes/commandes.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { DepensesComponent } from './pages/depenses/depenses.component';
@@ -28,6 +29,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'tableau-de-bord', component: DashboardComponent },
+      { path: 'caisse', component: CaisseComponent },
       { path: 'commandes', component: CommandesComponent },
       { path: 'productions', component: ProductionsComponent },
       { path: 'tournees', component: TourneesComponent },

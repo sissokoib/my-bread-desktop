@@ -31,7 +31,7 @@ export class LoginComponent implements OnInit {
   /** Diapositives modernes avec l'image du pain en animation */
   protected readonly slides: SlidePresentation[] = [
     {
-      tag: '📱 GESTION DIGITALE COMPLÈTE',
+      tag: 'GESTION DIGITALE COMPLÈTE',
       titre: 'Pilotez votre boulangerie depuis votre téléphone',
       image: 'images/pain-3d.png',
     },
@@ -41,7 +41,7 @@ export class LoginComponent implements OnInit {
       image: 'images/pain-3d.png',
     },
     {
-      tag: '📜 BULLETINS DE DÉCOMPTE OFFICIELS',
+      tag: 'BULLETINS DE DÉCOMPTE OFFICIELS',
       titre: 'Bulletins certifiés en 1 clic',
       image: 'images/pain-3d.png',
     },
@@ -115,11 +115,6 @@ export class LoginComponent implements OnInit {
     this.auth.login(tel, this.motDePasse).subscribe({
       next: (rep) => {
         this.enCours.set(false);
-        if (rep.utilisateur.role === 'PDG') {
-          this.auth.logout(false);
-          this.erreur.set("L'accès PDG est réservé exclusivement à l'application mobile My Bread. Veuillez vous connecter depuis votre smartphone.");
-          return;
-        }
         if (rep.utilisateur.role === 'SUPER_ADMIN') {
           void this.router.navigate(['/super-admin']);
         } else {

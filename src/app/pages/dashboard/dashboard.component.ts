@@ -49,8 +49,8 @@ export class DashboardComponent implements OnInit {
   private readonly clientService = inject(ClientService);
   private readonly utilisateurService = inject(UtilisateurService);
 
-  /** Vide = cumul global de toutes les dates ; sinon filtre YYYY-MM-DD */
-  protected readonly dateSelectionnee = signal<string>('');
+  /** Date sélectionnée (par défaut : aujourd'hui pour être 100% raccord avec l'application mobile PDG) */
+  protected readonly dateSelectionnee = signal<string>(new Date().toISOString().substring(0, 10));
 
   protected readonly resume = signal<DashboardResume | null>(null);
   protected readonly productions = signal<Production[]>([]);
@@ -102,17 +102,25 @@ export class DashboardComponent implements OnInit {
         (t.bilansProduits ?? []).reduce((s, b) => s + (b.quantiteLivree || 0), 0),
       0,
     );
-    if (totalDepuisTournees > 0) {
-      return totalDepuisTournees;
-    }
     const livsFiltrees = d
       ? this.livraisons().filter((l) => l.dateLivraison.startsWith(d))
       : this.livraisons();
-    return livsFiltrees.reduce(
+    const totalDepuisLivs = livsFiltrees.reduce(
       (acc, l) =>
         acc + (l.lignes ?? []).reduce((s, lg) => s + (lg.quantite || 0), 0),
       0,
     );
+    const base = totalDepuisTournees > 0 ? totalDepuisTournees : totalDepuisLivs;
+
+    const cmdsLivrees = d
+      ? this.commandes().filter((c) => c.dateLivraisonSouhaitee === d && c.statut === 'LIVREE')
+      : this.commandes().filter((c) => c.statut === 'LIVREE');
+    const totalCmds = cmdsLivrees.reduce(
+      (acc, c) => acc + (c.lignes ?? []).reduce((s, lg) => s + (lg.quantite || 0), 0),
+      0,
+    );
+
+    return base + totalCmds;
   });
 
   protected readonly quantiteRetourneeAffichee = computed(() => {
@@ -145,13 +153,18 @@ export class DashboardComponent implements OnInit {
       ? this.livraisons().filter((l) => l.dateLivraison.startsWith(d))
       : this.livraisons();
     const totalLivs = livs.reduce((acc, l) => acc + (l.montantTotal || 0), 0);
-    if (totalLivs > 0) {
-      return totalLivs;
-    }
     const trns = d
       ? this.tournees().filter((t) => t.dateTournee === d)
       : this.tournees();
-    return trns.reduce((acc, t) => acc + (t.totalVentes || 0), 0);
+    const totalTrns = trns.reduce((acc, t) => acc + (t.totalVentes || 0), 0);
+    const baseVentes = totalLivs > 0 ? totalLivs : totalTrns;
+
+    const cmdsLivrees = d
+      ? this.commandes().filter((c) => c.dateLivraisonSouhaitee === d && c.statut === 'LIVREE')
+      : this.commandes().filter((c) => c.statut === 'LIVREE');
+    const totalCmds = cmdsLivrees.reduce((acc, c) => acc + (c.montantTotal || 0), 0);
+
+    return baseVentes + totalCmds;
   });
 
   protected readonly depensesAffichees = computed(() => {
@@ -362,6 +375,16 @@ export class DashboardComponent implements OnInit {
       ventesParNom.set(nom, (ventesParNom.get(nom) ?? 0) + montant);
     }
 
+    // 2b. Additionner les ventes des commandes directes livrées
+    const cmdsLivreesFiltrees = d
+      ? this.commandes().filter((c) => c.dateLivraisonSouhaitee === d && c.statut === 'LIVREE')
+      : this.commandes().filter((c) => c.statut === 'LIVREE');
+
+    for (const c of cmdsLivreesFiltrees) {
+      const nom = c.livreurNom || 'Livreur';
+      ventesParNom.set(nom, (ventesParNom.get(nom) ?? 0) + (c.montantTotal || 0));
+    }
+
     // 3. Si aucune tournée n'a encore de totalVentes mais des livraisons existent
     if (Array.from(ventesParNom.values()).every((v) => v === 0)) {
       const livsFiltrees = d
@@ -387,7 +410,16 @@ export class DashboardComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.changerDate(this.dateSelectionnee());
     this.chargerToutesDonnees();
+  }
+
+  protected definirAujourdhui(): void {
+    this.changerDate(new Date().toISOString().substring(0, 10));
+  }
+
+  protected definirCumulGlobal(): void {
+    this.changerDate('');
   }
 
   protected changerDate(date: string): void {

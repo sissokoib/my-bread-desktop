@@ -34,16 +34,20 @@
           class="btn-hero-outline"
           (click)="exporterRapportCSV()"
           title="Télécharger l'audit complet au format Excel / CSV"
+          style="display: inline-flex; align-items: center; gap: 6px"
         >
-          📥 Exporter Rapport CSV
+          <span class="material-symbols-outlined" style="font-size: 1.1rem">download</span>
+          Exporter Rapport CSV
         </button>
         <button
           type="button"
           class="btn-hero-ghost"
           (click)="chargerTout()"
           title="Recharger toutes les données"
+          style="display: inline-flex; align-items: center; gap: 6px"
         >
-          🔄 Actualiser
+          <span class="material-symbols-outlined" style="font-size: 1.1rem">sync</span>
+          Actualiser
         </button>
       </div>
     </div>
@@ -62,7 +66,9 @@
          ===================================================================== -->
     @if (boulangeriesEnAlerte().length > 0) {
       <div class="saas-alert-banner">
-        <div class="alert-icon">⚠️</div>
+        <div class="alert-icon" style="display: flex; align-items: center">
+          <span class="material-symbols-outlined" style="font-size: 1.5rem; color: #DC2626">warning</span>
+        </div>
         <div class="alert-body">
           <div class="alert-title">
             {{ boulangeriesEnAlerte().length }} boulangerie(s) nécessitent votre attention immédiate (échéance proche ou expirée) :
@@ -70,12 +76,16 @@
           <div class="alert-boulangeries-pills">
             @for (b of boulangeriesEnAlerte(); track b.id) {
               <div class="alert-pill-item">
-                <span class="pill-name">🏛️ {{ b.nom }}</span>
+                <span class="pill-name" style="display: inline-flex; align-items: center; gap: 4px">
+                  <span class="material-symbols-outlined" style="font-size: 0.95rem">storefront</span>
+                  {{ b.nom }}
+                </span>
                 <span [class]="b.expire ? 'pill-tag pill-tag-danger' : 'pill-tag pill-tag-warning'">
                   {{ b.expire ? 'Expiré' : b.joursRestants + ' j restant(s)' }}
                 </span>
-                <a [href]="'tel:' + b.telephone" class="pill-call" title="Appeler le responsable">
-                  📞 {{ b.telephone }}
+                <a [href]="'tel:' + b.telephone" class="pill-call" title="Appeler le responsable" style="display: inline-flex; align-items: center; gap: 4px">
+                  <span class="material-symbols-outlined" style="font-size: 0.85rem">call</span>
+                  {{ b.telephone }}
                 </a>
                 <button
                   type="button"
@@ -99,7 +109,7 @@
       <div class="saas-kpi-grid">
         <div class="saas-kpi-card card-glow-gold">
           <div class="kpi-header">
-            <span class="kpi-icon">💰</span>
+            <span class="material-symbols-outlined" style="font-size: 1.6rem; color: #D4A017">payments</span>
             <span class="kpi-tag">Plateforme</span>
           </div>
           <div class="kpi-label">Chiffre d'Affaires Global</div>
@@ -111,7 +121,7 @@
 
         <div class="saas-kpi-card card-glow-green">
           <div class="kpi-header">
-            <span class="kpi-icon">✅</span>
+            <span class="material-symbols-outlined" style="font-size: 1.6rem; color: #10B981">verified</span>
             <span class="kpi-tag">Trésorerie</span>
           </div>
           <div class="kpi-label">Total Encaissé Réel</div>
@@ -123,7 +133,7 @@
 
         <div class="saas-kpi-card card-glow-amber">
           <div class="kpi-header">
-            <span class="kpi-icon">⏳</span>
+            <span class="material-symbols-outlined" style="font-size: 1.6rem; color: #F59E0B">pending_actions</span>
             <span class="kpi-tag">Encours</span>
           </div>
           <div class="kpi-label">Dettes Boutiquiers en Cours</div>
@@ -135,7 +145,7 @@
 
         <div class="saas-kpi-card card-glow-blue">
           <div class="kpi-header">
-            <span class="kpi-icon">🏛️</span>
+            <span class="material-symbols-outlined" style="font-size: 1.6rem; color: #3B82F6">storefront</span>
             <span class="kpi-tag">Abonnements</span>
           </div>
           <div class="kpi-label">Établissements & Santé SaaS</div>
@@ -313,7 +323,10 @@
               @for (b of topBoulangeriesParCA().slice(0, 5); track b.id) {
                 <div class="fleet-item">
                   <div class="fleet-name-row">
-                    <span class="fleet-boulangerie-name">🏛️ {{ b.nom }}</span>
+                    <span class="fleet-boulangerie-name" style="display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 1rem">storefront</span>
+                      {{ b.nom }}
+                    </span>
                     <span class="fleet-counts">
                       <strong>{{ b.nbLivreurs }}</strong> livreur(s) • <strong>{{ b.nbClients }}</strong> boutique(s)
                     </span>
@@ -339,8 +352,9 @@
       <div class="card" style="margin-bottom: 1.5rem">
         <div class="saas-table-toolbar">
           <div>
-            <h2 class="section-title">
-              🏛️ Établissements & Licences des Boulangeries ({{ boulangeriesFiltrees().length }} / {{ boulangeries().length }})
+            <h2 class="section-title" style="display: flex; align-items: center; gap: 8px">
+              <span class="material-symbols-outlined" style="font-size: 1.4rem; color: #3B82F6">storefront</span>
+              Établissements &amp; Licences des Boulangeries ({{ boulangeriesFiltrees().length }} / {{ boulangeries().length }})
             </h2>
             <p class="section-desc">
               Gérez les accès, les forfaits et renouvelez immédiatement les abonnements mensuels.
@@ -374,8 +388,10 @@
               type="button"
               [class]="ongletStatut() === 'ALERTES' ? 'filter-tab-active' : 'filter-tab'"
               (click)="ongletStatut.set('ALERTES')"
+              style="display: inline-flex; align-items: center; gap: 4px"
             >
-              ⚠️ Alertes / Expirés ({{ boulangeriesEnAlerte().length }})
+              <span class="material-symbols-outlined" style="font-size: 0.95rem; color: #DC2626">warning</span>
+              Alertes / Expirés ({{ boulangeriesEnAlerte().length }})
             </button>
           </div>
         </div>
@@ -399,9 +415,11 @@
                   <td>
                     <div class="boulangerie-cell-title">{{ b.nom }}</div>
                     <div class="boulangerie-cell-contact">
-                      📞 <a [href]="'tel:' + b.telephone">{{ b.telephone }}</a>
+                      <span class="material-symbols-outlined" style="font-size: 0.85rem; vertical-align: middle">call</span>
+                      <a [href]="'tel:' + b.telephone">{{ b.telephone }}</a>
                       @if (b.adresse) {
-                        • 📍 {{ b.adresse }}
+                        • <span class="material-symbols-outlined" style="font-size: 0.85rem; vertical-align: middle">location_on</span>
+                        {{ b.adresse }}
                       }
                     </div>
                   </td>
@@ -417,15 +435,16 @@
                       </span>
                     } @else if (b.statutAbonnement === 'ESSAI_GRATUIT' && !b.expire) {
                       <span class="badge-status-pill pill-trial">
-                        ★ Essai Gratuit ({{ b.joursRestants }}j)
+                        Essai Gratuit ({{ b.joursRestants }}j)
                       </span>
                     } @else if (b.statutAbonnement === 'SUSPENDU') {
                       <span class="badge-status-pill pill-suspended">
-                        ✕ Suspendu
+                        Suspendu
                       </span>
                     } @else {
-                      <span class="badge-status-pill pill-expired">
-                        ⚠️ Expiré (À contacter)
+                      <span class="badge-status-pill pill-expired" style="display: inline-flex; align-items: center; gap: 4px">
+                        <span class="material-symbols-outlined" style="font-size: 0.85rem">warning</span>
+                        Expiré (À contacter)
                       </span>
                     }
                   </td>
@@ -446,8 +465,10 @@
                       class="btn-voir-equipe"
                       (click)="filtrerUtilisateursParBoulangerie(b.id)"
                       title="Filtrer et afficher tous les utilisateurs de cette boulangerie"
+                      style="display: inline-flex; align-items: center; gap: 4px"
                     >
-                      👥 Voir l'équipe ({{ nbMembresParBoulangerie().get(b.id) || b.nbLivreurs + 1 }})
+                      <span class="material-symbols-outlined" style="font-size: 0.95rem">group</span>
+                      Voir l'équipe ({{ nbMembresParBoulangerie().get(b.id) || b.nbLivreurs + 1 }})
                     </button>
                   </td>
                   <td>
@@ -513,8 +534,9 @@
       <div id="section-utilisateurs" class="card" style="margin-bottom: 1.5rem">
         <div class="saas-table-toolbar">
           <div>
-            <h2 class="section-title">
-              👥 Répertoire Multi-Boulangeries des Utilisateurs ({{ comptesFiltres().length }} / {{ p.totalUtilisateurs }})
+            <h2 class="section-title" style="display: flex; align-items: center; gap: 8px">
+              <span class="material-symbols-outlined" style="font-size: 1.4rem; color: #3B82F6">group</span>
+              Répertoire Multi-Boulangeries des Utilisateurs ({{ comptesFiltres().length }} / {{ p.totalUtilisateurs }})
             </h2>
             <p class="section-desc">
               Différenciez et filtrez facilement chaque membre par établissement, rôle et statut d'accès.
@@ -531,7 +553,7 @@
                 [ngModel]="boulangerieFiltre()"
                 (ngModelChange)="boulangerieFiltre.set($event)"
               >
-                <option [ngValue]="null">🏛️ Toutes les boulangeries</option>
+                <option [ngValue]="null">Toutes les boulangeries</option>
                 @for (b of boulangeries(); track b.id) {
                   <option [ngValue]="b.id">
                     {{ b.nom }} ({{ nbMembresParBoulangerie().get(b.id) || 0 }} membres)
@@ -692,8 +714,9 @@
       <div class="card saas-maintenance-card">
         <div class="maintenance-flex">
           <div>
-            <h2 class="maintenance-title">
-              ⚠️ Maintenance Plateforme & Purge Transactionnelle
+            <h2 class="maintenance-title" style="display: flex; align-items: center; gap: 8px">
+              <span class="material-symbols-outlined" style="font-size: 1.4rem; color: #DC2626">warning</span>
+              Maintenance Plateforme &amp; Purge Transactionnelle
             </h2>
             <p class="maintenance-desc">
               Permet de réinitialiser toutes les données de test (fournées, tournées, livraisons, paiements, commandes, dépenses).

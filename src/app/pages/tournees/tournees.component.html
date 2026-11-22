@@ -1,294 +1,381 @@
 <div class="page-header">
-      <div>
-        <h1>Pains livrés</h1>
-        <p class="page-sub">
-          Suivi des pains sortis du fournil, livraisons clients (baptêmes, mariages, événements) et décomptes
-        </p>
-      </div>
-      <button type="button" class="btn-primary" (click)="dialogCreation.set(true)">
-        + Enregistrer des pains livrés
-      </button>
+  <div>
+    <h1>Sorties des livreurs</h1>
+    <p class="page-sub">
+      Suivi du pain confié aux livreurs : chargement du matin, retours d'invendus et décompte des versements en caisse.
+    </p>
+  </div>
+  <button type="button" class="btn-primary" (click)="dialogCreation.set(true)">
+    + Nouveau chargement livreur
+  </button>
+</div>
+
+@if (succesMessage()) {
+  <div
+    class="alert"
+    style="
+      background: #ECFDF5;
+      color: #065F46;
+      border: 1.5px solid #6EE7B7;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-weight: 600;
+    "
+  >
+    <span class="material-symbols-outlined" style="color: #059669; font-size: 1.3rem">check_circle</span>
+    <span>{{ succesMessage() }}</span>
+  </div>
+}
+
+@if (erreur()) {
+  <div class="alert alert-error">{{ erreur() }}</div>
+}
+
+<!-- BARRE DE DATE & OUTILS -->
+<div class="card" style="margin-bottom: 1.25rem">
+  <div class="toolbar" style="margin-bottom: 0">
+    <div class="field">
+      <label for="dateTournees">Date des sorties</label>
+      <input
+        id="dateTournees"
+        type="date"
+        [ngModel]="dateFiltre()"
+        (ngModelChange)="changerDate($event)"
+      />
     </div>
-
-    @if (erreur()) {
-      <div class="alert alert-error">{{ erreur() }}</div>
+    @if (dateFiltre()) {
+      <button
+        type="button"
+        class="btn-secondary btn-sm"
+        style="align-self: flex-end"
+        (click)="changerDate('')"
+      >
+        Toutes les dates
+      </button>
     }
+  </div>
+</div>
 
-    <!-- Barre d'outils et filtre par date -->
-    <div class="card" style="margin-bottom: 1.25rem">
-      <div class="toolbar" style="margin-bottom: 0">
-        <div class="field">
-          <label for="dateTournees">Date des opérations</label>
-          <input
-            id="dateTournees"
-            type="date"
-            [ngModel]="dateFiltre()"
-            (ngModelChange)="changerDate($event)"
-          />
+<!-- STATS DU JOUR : LE DÉCOMPTE GLOBAL DES LIVREURS -->
+<div class="stats-grid stats-grid-4" style="margin-bottom: 1.25rem">
+  <div class="card">
+    <div class="stat-card-header">
+      <div>
+        <div class="stat-label">Livreurs en mission</div>
+        <div class="stat-value" style="color: var(--primary-dark)">
+          {{ totalLivreursPartis() | number }}
         </div>
-        @if (dateFiltre()) {
+      </div>
+      <div class="stat-icon-wrapper" style="background: #EFF6FF; color: #1D4ED8" title="Livreurs partis vendre">
+        <span class="material-symbols-outlined">local_shipping</span>
+      </div>
+    </div>
+    <div class="stat-hint">
+      {{ countEnCours() }} en vente · {{ countCloturees() }} décompté(s)
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stat-card-header">
+      <div>
+        <div class="stat-label">Pains sortis du fournil</div>
+        <div class="stat-value" style="color: #DEAB38">
+          {{ totalPainsCharges() | number }} <span style="font-size: 0.85rem">pains</span>
+        </div>
+      </div>
+      <div class="stat-icon-wrapper gold" title="Total pains chargés le matin">
+        <span class="material-symbols-outlined">bakery_dining</span>
+      </div>
+    </div>
+    <div class="stat-hint">
+      {{ totalPainsRetournes() | number }} invendu(s) ramené(s)
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stat-card-header">
+      <div>
+        <div class="stat-label">Pains vendus en ville</div>
+        <div class="stat-value" style="color: #059669">
+          {{ totalPainsVendus() | number }} <span style="font-size: 0.85rem">pains</span>
+        </div>
+      </div>
+      <div class="stat-icon-wrapper" style="background: #ECFDF5; color: #059669" title="Pains nets distribués">
+        <span class="material-symbols-outlined">shopping_bag</span>
+      </div>
+    </div>
+    <div class="stat-hint">
+      Valeur nette : {{ totalVentesLivreurs() | number }} FCFA
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="stat-card-header">
+      <div>
+        <div class="stat-label">Recette &amp; Encaissements</div>
+        <div class="stat-value" style="color: #047857">
+          {{ totalEncaisseLivreurs() | number }} <span style="font-size: 0.85rem">FCFA</span>
+        </div>
+      </div>
+      <div class="stat-icon-wrapper" style="background: #FDF4FF; color: #86198F" title="Recette versée en caisse">
+        <span class="material-symbols-outlined">payments</span>
+      </div>
+    </div>
+    <div class="stat-hint">
+      @if (totalResteADevoir() > 0) {
+        <span style="color: #DC2626; font-weight: 700">Reste à verser : {{ totalResteADevoir() | number }} FCFA</span>
+      } @else {
+        <span style="color: #059669; font-weight: 600">Tous les versements sont à jour</span>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- BARRE DE FILTRES DES LIVREURS -->
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap">
+  <button
+    type="button"
+    (click)="filtreStatut.set('TOUT')"
+    [style.background]="filtreStatut() === 'TOUT' ? '#FFFFFF' : 'transparent'"
+    [style.boxShadow]="filtreStatut() === 'TOUT' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'"
+    [style.fontWeight]="filtreStatut() === 'TOUT' ? '700' : '500'"
+    [style.color]="filtreStatut() === 'TOUT' ? 'var(--text-primary)' : '#6B7280'"
+    style="border: none; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.82rem; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 0.4rem"
+  >
+    <span>Tous les livreurs</span>
+    <span style="background: rgba(0,0,0,0.06); padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem">
+      {{ totalLivreursPartis() }}
+    </span>
+  </button>
+
+  <button
+    type="button"
+    (click)="filtreStatut.set('EN_COURS')"
+    [style.background]="filtreStatut() === 'EN_COURS' ? '#FFFFFF' : 'transparent'"
+    [style.boxShadow]="filtreStatut() === 'EN_COURS' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'"
+    [style.fontWeight]="filtreStatut() === 'EN_COURS' ? '700' : '500'"
+    [style.color]="filtreStatut() === 'EN_COURS' ? '#D97706' : '#6B7280'"
+    style="border: none; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.82rem; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 0.4rem"
+  >
+    <span class="material-symbols-outlined" style="font-size: 1.05rem; color: #D97706">pending_actions</span>
+    <span>En vente sur le terrain</span>
+    <span style="background: rgba(217,119,6,0.1); color: #B45309; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem">
+      {{ countEnCours() }}
+    </span>
+  </button>
+
+  <button
+    type="button"
+    (click)="filtreStatut.set('CLOTUREES')"
+    [style.background]="filtreStatut() === 'CLOTUREES' ? '#FFFFFF' : 'transparent'"
+    [style.boxShadow]="filtreStatut() === 'CLOTUREES' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'"
+    [style.fontWeight]="filtreStatut() === 'CLOTUREES' ? '700' : '500'"
+    [style.color]="filtreStatut() === 'CLOTUREES' ? '#047857' : '#6B7280'"
+    style="border: none; padding: 0.45rem 0.9rem; border-radius: 8px; font-size: 0.82rem; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 0.4rem"
+  >
+    <span class="material-symbols-outlined" style="font-size: 1.05rem; color: #059669">check_circle</span>
+    <span>Clôturés &amp; Décomptés</span>
+    <span style="background: rgba(5,150,105,0.12); color: #047857; padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.75rem">
+      {{ countCloturees() }}
+    </span>
+  </button>
+</div>
+
+<!-- LISTE DES FICHES LIVREURS DU JOUR -->
+@for (t of tourneesFiltrees(); track t.id) {
+  <div class="card" style="margin-bottom: 1.15rem; border-left: 4px solid" [style.borderLeftColor]="t.statut === 'CLOTUREE' ? '#10B981' : '#F59E0B'">
+    <div class="page-header" style="margin-bottom: 0.85rem">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem">
+          <!-- BADGE CRÉNEAU / MOMENT SORTIE (Matin / Soir / Réappro) -->
+          <span
+            class="badge"
+            [style.background]="couleurCreneau(t).bg"
+            [style.color]="couleurCreneau(t).color"
+            [style.borderColor]="couleurCreneau(t).border"
+            style="border: 1px solid; font-weight: 800; font-size: 0.76rem"
+          >
+            {{ libelleCreneau(t) }}
+          </span>
+
+          @if (t.statut === 'CLOTUREE') {
+            <span class="badge badge-ok" style="display: inline-flex; align-items: center; gap: 4px">
+              <span class="material-symbols-outlined" style="font-size: 0.95rem">check_circle</span>
+              Mission clôturée &amp; décomptée
+            </span>
+          } @else {
+            <span class="badge badge-warn" style="display: inline-flex; align-items: center; gap: 4px">
+              <span class="material-symbols-outlined" style="font-size: 0.95rem">local_shipping</span>
+              En cours de vente sur le terrain
+            </span>
+          }
+        </div>
+
+        <h2 style="display: flex; align-items: center; gap: 0.4rem; margin: 0">
+          <span class="material-symbols-outlined" style="font-size: 1.35rem; color: var(--primary)">person</span>
+          {{ t.livreurNom }}
+          <span class="page-sub" style="font-size: 0.88rem">· Tournée #{{ t.id }} du {{ t.dateTournee }}</span>
+        </h2>
+
+        @if (remarquesSansTag(t)) {
+          <p class="page-sub" style="margin-top: 0.25rem; color: #92400E">
+            Note : {{ remarquesSansTag(t) }}
+          </p>
+        }
+      </div>
+
+      <div class="actions">
+        @if (t.statut !== 'CLOTUREE') {
+          <button
+            type="button"
+            class="btn-primary"
+            style="background: #059669; border-color: #059669; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding: 0.55rem 1rem"
+            (click)="tourneePourCloture.set(t)"
+            title="Enregistrer le retour d'invendus et encaisser la recette du livreur"
+          >
+            <span class="material-symbols-outlined" style="font-size: 1.15rem">receipt_long</span>
+            Pointage retour &amp; Décompte
+          </button>
+        } @else {
+          @if (t.totalVentes > t.totalEncaisse) {
+            <button
+              type="button"
+              class="btn-primary btn-sm"
+              style="background: #047857; border-color: #047857; display: inline-flex; align-items: center; gap: 4px; font-weight: 700"
+              (click)="tourneePourVersement.set(t)"
+              title="Encaisser un versement partiel ou le solde restant des boutiquiers"
+            >
+              <span class="material-symbols-outlined" style="font-size: 0.95rem">payments</span>
+              Encaisser versement ({{ (t.totalVentes - t.totalEncaisse) | number }} F)
+            </button>
+          }
           <button
             type="button"
             class="btn-secondary btn-sm"
-            style="align-self: flex-end"
-            (click)="changerDate('')"
+            (click)="tourneePourCloture.set(t)"
+            title="Ajuster les invendus du décompte"
+            style="display: inline-flex; align-items: center; gap: 4px"
           >
-            Toutes les dates
+            <span class="material-symbols-outlined" style="font-size: 0.95rem">edit</span>
+            Ajuster invendus
           </button>
         }
       </div>
     </div>
 
-    <!-- ====================================================================
-         SECTION 1 : RECENSEMENT DES PAINS COMMANDÉS À LIVRER
-         ==================================================================== -->
-    <div class="card" style="margin-bottom: 1.25rem; border-left: 4px solid #F59E0B">
-      <div class="page-header" style="margin-bottom: 0.85rem">
-        <div>
-          <div style="display: flex; align-items: center; gap: 0.5rem">
-            <span style="font-size: 1.25rem" aria-hidden="true">🥖</span>
-            <h2 style="margin: 0">Pains commandés à livrer ({{ commandesALivrer().length }})</h2>
-          </div>
-          <p class="page-sub" style="margin-top: 0.25rem">
-            Recensement des commandes validées en attente de chargement et de distribution
-          </p>
-        </div>
-        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap">
-          <span class="badge badge-accent" style="font-size: 0.82rem; padding: 0.35rem 0.75rem">
-            Total : {{ totalPainsALivrer() | number }} pains à livrer
-          </span>
-          <span class="badge badge-ok" style="font-size: 0.82rem; padding: 0.35rem 0.75rem">
-            {{ totalMontantALivrer() | number }} FCFA
-          </span>
-        </div>
-      </div>
-
-      <!-- Synthèse rapide par variété de pain commandé -->
-      @if (recapPainsParProduit().length > 0) {
-        <div
-          style="
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            padding: 0.75rem 1rem;
-            background: #FFFBEB;
-            border: 1px solid #FDE68A;
-            border-radius: 10px;
-          "
-        >
-          <span
-            style="
-              font-size: 0.78rem;
-              font-weight: 750;
-              color: #92400E;
-              display: inline-flex;
-              align-items: center;
-              gap: 0.3rem;
-            "
-          >
-            📋 Chargement prévisionnel requis :
-          </span>
-          @for (item of recapPainsParProduit(); track item.nom) {
-            <span
-              class="badge"
-              style="
-                background: #FFFFFF;
-                border: 1px solid #FCD34D;
-                color: #78350F;
-                font-weight: 700;
-                font-size: 0.76rem;
-              "
-            >
-              {{ item.nom }} : <strong>{{ item.quantite | number }} u.</strong>
-            </span>
-          }
-        </div>
-      }
-
-      <!-- Tableau des commandes de pains à livrer -->
-      <div class="table-wrap">
-        <table>
-          <thead>
+    <!-- TABLEAU DU DÉCOMPTE PHYSIQUE DES PAINS -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Type de pain</th>
+            <th class="num">1. Chargé le matin</th>
+            <th class="num">2. Invendus ramenés</th>
+            <th class="num">3. Vendu en ville</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (b of t.bilansProduits; track b.produitId) {
             <tr>
-              <th>Date souhaitée</th>
-              <th>Client / Événement</th>
-              <th>Livreur assigné</th>
-              <th>Pains commandés</th>
-              <th class="num">Total pains</th>
-              <th class="num">Montant</th>
-              <th>Statut</th>
-              <th style="text-align: right">Action</th>
+              <td>
+                <strong>{{ b.produitNom }}</strong>
+              </td>
+              <td class="num" style="font-weight: 600">
+                {{ b.quantiteChargee | number }} pains
+              </td>
+              <td class="num">
+                @if (b.quantiteRetournee > 0) {
+                  <span class="badge badge-warn">-{{ b.quantiteRetournee | number }} pains</span>
+                } @else {
+                  <span style="color: #9CA3AF">0 pain</span>
+                }
+              </td>
+              <td class="num">
+                <strong style="color: #059669; font-size: 0.95rem">
+                  {{ (b.quantiteChargee - b.quantiteRetournee) | number }} pains
+                </strong>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            @for (c of commandesALivrer(); track c.id) {
-              <tr>
-                <td>
-                  <strong style="font-size: 0.85rem">{{ c.dateLivraisonSouhaitee }}</strong>
-                </td>
-                <td>
-                  <div style="font-weight: 700; color: var(--text-primary)">
-                    {{ c.clientNomBoutique || 'Livraison événement / client' }}
-                  </div>
-                  @if (c.remarques) {
-                    <span style="font-size: 0.72rem; color: #92400E; display: block">{{ c.remarques }}</span>
-                  }
-                </td>
-                <td>
-                  @if (c.livreurNom) {
-                    <span style="font-size: 0.82rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem">
-                      <span class="material-symbols-outlined" style="font-size: 1.05rem; color: var(--primary)">local_shipping</span>
-                      {{ c.livreurNom }}
-                    </span>
-                  } @else {
-                    <span class="badge badge-muted">Non assigné</span>
-                  }
-                </td>
-                <td>
-                  <div style="display: flex; flex-wrap: wrap; gap: 0.3rem">
-                    @for (l of c.lignes; track l.produitId) {
-                      <span class="badge badge-accent" style="font-size: 0.74rem">
-                        {{ l.produitNom }} : <strong>{{ l.quantite }}</strong>
-                      </span>
-                    }
-                  </div>
-                </td>
-                <td class="num">
-                  <strong style="color: var(--primary-dark); font-size: 0.92rem">
-                    {{ sommePainsCommande(c) | number }}
-                  </strong>
-                </td>
-                <td class="num">
-                  <strong>{{ c.montantTotal | number }} FCFA</strong>
-                </td>
-                <td>
-                  <span
-                    class="badge"
-                    [class.badge-warn]="c.statut === 'EN_ATTENTE'"
-                    [class.badge-ok]="c.statut === 'VALIDEE' || c.statut === 'PREPAREE' || c.statut === 'LIVREE'"
-                  >
-                    {{ libelleStatutCommande(c.statut) }}
-                  </span>
-                </td>
-                <td style="text-align: right">
-                  <button
-                    type="button"
-                    class="btn-primary btn-sm"
-                    style="font-size: 0.75rem; padding: 0.3rem 0.65rem"
-                    (click)="marquerCommandeLivree(c)"
-                    title="Marquer cette commande comme livrée"
-                  >
-                    ✓ Marquer livrée
-                  </button>
-                </td>
-              </tr>
-            } @empty {
-              <tr>
-                <td colspan="8" class="empty">
-                  Aucune commande de pain en attente de livraison pour cette sélection.
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+          }
+        </tbody>
+      </table>
     </div>
 
-    <!-- ====================================================================
-         SECTION 2 : SORTIES DE PAIN & LIVRAISONS
-         ==================================================================== -->
-    @for (t of tournees(); track t.id) {
-      <div class="card" style="margin-bottom: 1rem">
-        <div class="page-header" style="margin-bottom: 0.75rem">
-          <div>
-            <h2 style="display: flex; align-items: center; gap: 0.4rem">
-              <span class="material-symbols-outlined" style="font-size: 1.35rem; color: var(--primary)">local_shipping</span>
-              {{ t.livreurNom }} · <span class="page-sub">{{ t.dateTournee }}</span>
-            </h2>
-            <p class="page-sub">
-              Valeur des pains :
-              <strong>{{ t.totalVentes | number }} FCFA</strong> · Encaissé :
-              <strong>{{ t.totalEncaisse | number }} FCFA</strong>
-              @if (t.remarques) {
-                · <strong style="color: #92400E">{{ t.remarques }}</strong>
-              }
-            </p>
-          </div>
-
-          <div class="actions">
-            @if (t.statut === 'CLOTUREE') {
-              <span class="badge badge-ok">✓ Soldé &amp; Conforme</span>
-            } @else {
-              <span class="badge badge-accent">En cours</span>
-              <button
-                type="button"
-                class="btn-secondary btn-sm"
-                (click)="tourneePourCloture.set(t)"
-                title="Déduire les retours d'invendus pour ajuster le décompte"
-              >
-                ↺ Déduire des retours
-              </button>
-            }
-          </div>
-        </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Produit</th>
-                <th class="num">Pains sortis</th>
-                <th class="num">Retours d'invendus</th>
-                <th class="num">Pains facturés</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (b of t.bilansProduits; track b.produitId) {
-                <tr>
-                  <td>
-                    <strong>{{ b.produitNom }}</strong>
-                  </td>
-                  <td class="num">{{ b.quantiteChargee | number }}</td>
-                  <td class="num">
-                    @if (b.quantiteRetournee > 0) {
-                      <span class="badge badge-warn">-{{ b.quantiteRetournee | number }}</span>
-                    } @else {
-                      0
-                    }
-                  </td>
-                  <td class="num">
-                    <strong style="color: var(--primary-dark)">
-                      {{ (b.quantiteChargee - b.quantiteRetournee) | number }}
-                    </strong>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+    <!-- RÉCAPITULATIF FINANCIER DU LIVREUR -->
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: #F9FAFB;
+        border-top: 1px solid var(--border);
+        border-radius: 0 0 12px 12px;
+        margin-top: 0.25rem;
+      "
+    >
+      <div style="font-size: 0.85rem; color: #4B5563">
+        Valeur nette des ventes :
+        <strong style="color: #1F2937; font-size: 0.95rem">{{ t.totalVentes | number }} FCFA</strong>
       </div>
-    } @empty {
-      <div class="card empty" style="margin-bottom: 1.25rem">
-        Aucun pain livré enregistré pour cette sélection.
+
+      <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.85rem">
+        <span style="color: #065F46">
+          Versé en caisse :
+          <strong style="font-size: 0.95rem">{{ t.totalEncaisse | number }} FCFA</strong>
+        </span>
+
+        @if (t.totalVentes > t.totalEncaisse) {
+          <span class="badge badge-warn" style="font-size: 0.8rem">
+            Reste dû : {{ (t.totalVentes - t.totalEncaisse) | number }} FCFA
+          </span>
+        } @else {
+          <span class="badge badge-ok" style="font-size: 0.8rem">
+            Recette réglée
+          </span>
+        }
       </div>
-    }
+    </div>
+  </div>
+} @empty {
+  <div class="card empty" style="margin-bottom: 1.25rem; padding: 2.5rem; text-align: center">
+    <span class="material-symbols-outlined" style="font-size: 2.5rem; color: #9CA3AF; display: block; margin-bottom: 0.5rem">local_shipping</span>
+    <strong>Aucune sortie livreur enregistrée pour cette date.</strong>
+    <p class="page-sub" style="margin-top: 0.25rem">
+      Cliquez sur « + Nouveau chargement livreur » pour enregistrer le départ d'un livreur avec son stock de pain.
+    </p>
+  </div>
+}
 
-    @if (dialogCreation()) {
-      <app-tournee-dialog
-        [livreurs]="livreursActifs()"
-        [produits]="produitsActifs()"
-        [dateParDefaut]="dateFiltre()"
-        (fermer)="dialogCreation.set(false)"
-        (enregistre)="apresAction()"
-      />
-    }
+<!-- DIALOGUES -->
+@if (dialogCreation()) {
+  <app-tournee-dialog
+    [livreurs]="livreursActifs()"
+    [produits]="produitsActifs()"
+    [dateParDefaut]="dateFiltre()"
+    (fermer)="dialogCreation.set(false)"
+    (enregistre)="apresAction()"
+  />
+}
 
-    @if (tourneePourCloture(); as tc) {
-      <app-tournee-cloture-dialog
-        [tournee]="tc"
-        (fermer)="tourneePourCloture.set(null)"
-        (enregistre)="apresAction()"
-      />
-    }
+@if (tourneePourCloture(); as tc) {
+  <app-tournee-cloture-dialog
+    [tournee]="tc"
+    (fermer)="tourneePourCloture.set(null)"
+    (enregistre)="apresAction()"
+  />
+}
+
+@if (tourneePourVersement(); as tv) {
+  <app-tournee-versement-dialog
+    [tournee]="tv"
+    (fermer)="tourneePourVersement.set(null)"
+    (enregistre)="apresAction()"
+  />
+}
