@@ -627,7 +627,7 @@ export class BulletinsComponent implements OnInit {
           ctx.font = 'bold 16px sans-serif';
           ctx.fillText(this.libelleLivreurSelectionne(), 65, y + 44);
 
-          const statutText = this.reliquatGlobal() === 0 ? '✔️ DÉCOMPTE SOLDÉ (0 FCFA)' : '⚠️ RESTE À RÉGLER';
+          const statutText = this.reliquatGlobal() === 0 ? 'DÉCOMPTE SOLDÉ (0 FCFA)' : 'RESTE À RÉGLER';
           ctx.fillStyle = this.reliquatGlobal() === 0 ? '#059669' : '#DC2626';
           ctx.font = 'bold 13px sans-serif';
           ctx.textAlign = 'right';
@@ -816,7 +816,7 @@ export class BulletinsComponent implements OnInit {
           ctx.fillStyle = '#4B5563';
           ctx.font = '11px sans-serif';
           ctx.textAlign = 'right';
-          ctx.fillText('📞 +223 60 79 75 75   |   📍 Badalabougou, Bamako   |   ✉️ contact@mybread.ml', width - 50, height - 30);
+          ctx.fillText('Tel : +223 60 79 75 75   |   Badalabougou, Bamako   |   contact@mybread.ml', width - 50, height - 30);
           ctx.textAlign = 'left';
 
           // 9. Pied de page

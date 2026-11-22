@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ClientSolde, ModePaiement, Paiement } from '../models/operations.model';
 import { messageErreur } from '../services/message-erreur';
 import { PaiementService } from '../services/paiement.service';
+import { SoundService } from '../services/sound.service';
 
 @Component({
   selector: 'app-paiement-dialog',
@@ -185,6 +186,7 @@ import { PaiementService } from '../services/paiement.service';
 })
 export class PaiementDialogComponent implements OnInit {
   private readonly service = inject(PaiementService);
+  private readonly soundService = inject(SoundService);
 
   @Input({ required: true }) soldes!: ClientSolde[];
   @Input() clientPreselectionne: ClientSolde | null = null;
@@ -243,6 +245,7 @@ export class PaiementDialogComponent implements OnInit {
       .subscribe({
         next: (res) => {
           this.enCours.set(false);
+          this.soundService.jouerSonCaisse();
           this.enregistre.emit(res);
         },
         error: (err) => {

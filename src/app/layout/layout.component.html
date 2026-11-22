@@ -26,8 +26,9 @@
         "
       >
         <div>
-          <div style="font-weight: 800; font-size: 0.95rem">
-            ⚠️ Période d'essai terminée / Abonnement arrivé à échéance
+          <div style="font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; gap: 6px">
+            <span class="material-symbols-outlined" style="font-size: 1.2rem; color: #DC2626">warning</span>
+            Période d'essai terminée / Abonnement arrivé à échéance
           </div>
           <div style="font-size: 0.84rem; margin-top: 0.2rem">
             Pour continuer à enregistrer vos fournées et tournées, veuillez contacter l'administrateur au
@@ -37,9 +38,10 @@
         <a
           href="tel:+22370000000"
           class="btn-primary btn-sm"
-          style="background: #991B1B; color: #FFFFFF; text-decoration: none"
+          style="background: #991B1B; color: #FFFFFF; text-decoration: none; display: inline-flex; align-items: center; gap: 6px"
         >
-          📞 Appeler pour Renouveler
+          <span class="material-symbols-outlined" style="font-size: 1rem">call</span>
+          Appeler pour Renouveler
         </a>
       </div>
     } @else if (enEssaiGratuit()) {
@@ -59,9 +61,10 @@
           gap: 0.6rem;
         "
       >
-        <span>
-          ★ <strong>Période d'essai gratuit</strong> : il vous reste
-          <strong>{{ utilisateur()?.joursRestantsAbonnement }} jour(s)</strong> pour tester toutes les fonctionnalités.
+        <span style="display: inline-flex; align-items: center; gap: 6px">
+          <span class="material-symbols-outlined" style="font-size: 1.05rem; color: #D97706">star</span>
+          <span><strong>Période d'essai gratuit</strong> : il vous reste
+          <strong>{{ utilisateur()?.joursRestantsAbonnement }} jour(s)</strong> pour tester toutes les fonctionnalités.</span>
         </span>
         <span style="font-weight: 600; font-size: 0.8rem">
           Assistance & Renouvellement : {{ utilisateur()?.contactCommercial || '+223 70 00 00 00' }}

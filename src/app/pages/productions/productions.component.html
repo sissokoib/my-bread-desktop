@@ -4,8 +4,9 @@
         <p class="page-sub">Suivi quotidien des pains sortis du four et contrôle de la farine</p>
       </div>
       <div style="display: flex; gap: 0.6rem; align-items: center">
-        <button type="button" class="btn-secondary" (click)="dialogFarineOuvert.set(true)">
-          🌾 + Réception Farine
+        <button type="button" class="btn-secondary" (click)="dialogFarineOuvert.set(true)" style="display: inline-flex; align-items: center; gap: 6px">
+          <span class="material-symbols-outlined" style="font-size: 1.15rem">grain</span>
+          + Réception Farine
         </button>
         <button type="button" class="btn-primary" (click)="dialogOuvert.set(true)">
           + Nouvelle fournée
@@ -17,7 +18,38 @@
       <div class="alert alert-error">{{ erreur() }}</div>
     }
 
-    <div class="stats-grid">
+    @if (totalCommandesJour() > 0) {
+      <div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border: 1.5px solid #F59E0B; padding: 1.1rem 1.4rem">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem">
+          <div style="display: flex; align-items: center; gap: 0.85rem">
+            <span class="material-symbols-outlined" style="font-size: 2.2rem; color: #D97706">assignment_turned_in</span>
+            <div>
+              <div style="font-size: 1.05rem; font-weight: 700; color: #92400E">
+                Objectif de production : {{ totalCommandesJour() | number }} pains réservés par les livreurs
+              </div>
+              <div style="font-size: 0.85rem; color: #B45309; margin-top: 2px">
+                Pour la date du {{ dateFiltre() || 'aujourd\'hui' }} • Fournées actuelles : {{ totalQuantite() | number }} pièces cuites
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.75rem">
+            @if (resteAProduire() > 0) {
+              <div style="background: #FEE2E2; color: #991B1B; border: 1px solid #FCA5A5; padding: 0.45rem 0.9rem; border-radius: 8px; font-weight: 700; font-size: 0.88rem; display: flex; align-items: center; gap: 0.4rem">
+                <span class="material-symbols-outlined" style="font-size: 1.15rem">pending</span>
+                Reste à cuire : {{ resteAProduire() | number }} pains (~{{ sacsFarineRecommandes() }} sac(s) de farine)
+              </div>
+            } @else {
+              <div style="background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; padding: 0.45rem 0.9rem; border-radius: 8px; font-weight: 700; font-size: 0.88rem; display: flex; align-items: center; gap: 0.4rem">
+                <span class="material-symbols-outlined" style="font-size: 1.15rem">check_circle</span>
+                Toutes les commandes sont couvertes !
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <div class="stats-grid stats-grid-4">
       <div class="card">
         <div class="stat-card-header">
           <div>
@@ -77,26 +109,28 @@
     </div>
 
     <div class="card">
-      <div class="toolbar">
-        <div class="field">
-          <label for="filtreDateProd">Filtrer par date</label>
+      <div class="toolbar" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem">
+        <div style="display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap">
+          <button type="button" class="btn-secondary btn-sm" (click)="filtrerDateRapide('AUJOURDHUI')">
+            Aujourd'hui
+          </button>
+          <button type="button" class="btn-secondary btn-sm" (click)="filtrerDateRapide('HIER')">
+            Hier
+          </button>
+          <button type="button" class="btn-secondary btn-sm" (click)="filtrerDateRapide('TOUT')">
+            Tout l'historique
+          </button>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 0.45rem">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary)">Date :</span>
           <input
             id="filtreDateProd"
             type="date"
+            style="width: auto"
             [ngModel]="dateFiltre()"
             (ngModelChange)="changerDate($event)"
           />
         </div>
-        @if (dateFiltre()) {
-          <button
-            type="button"
-            class="btn-secondary btn-sm"
-            style="align-self: flex-end"
-            (click)="changerDate('')"
-          >
-            Voir tout l'historique
-          </button>
-        }
       </div>
 
       <div class="table-wrap">
@@ -130,8 +164,18 @@
                   }
                 </td>
                 <td>
-                  @if (p.rendementObtenu && p.rendementObtenu > 0) {
-                    <strong>{{ p.rendementObtenu }}</strong> <small>pains/sac</small>
+                  @if (rendementFournee(p); as rdm) {
+                    @if (rdm < seuilRendementStandard) {
+                      <span class="badge badge-warn" style="display: inline-flex; align-items: center; gap: 4px" title="Rendement inférieur au seuil standard de 280 pains/sac">
+                        <span class="material-symbols-outlined" style="font-size: 0.9rem">warning</span>
+                        <strong>{{ rdm }}</strong> pains/sac (Sous-rendement)
+                      </span>
+                    } @else {
+                      <span class="badge badge-ok" style="display: inline-flex; align-items: center; gap: 4px">
+                        <span class="material-symbols-outlined" style="font-size: 0.9rem">verified</span>
+                        <strong>{{ rdm }}</strong> pains/sac
+                      </span>
+                    }
                   } @else {
                     <span style="color: #9e9288">—</span>
                   }
@@ -172,12 +216,14 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem">
         <div>
           <h2 style="font-size: 1.15rem; font-weight: 800; color: #2C1810; margin: 0; display: flex; align-items: center; gap: 0.5rem">
-            🌾 Historique des réceptions de farine
+            <span class="material-symbols-outlined" style="font-size: 1.3rem; color: #B45309">grain</span>
+            Historique des réceptions de farine
           </h2>
           <p class="page-sub" style="margin-top: 0.2rem">Traçabilité complète des réceptions de farine et synchronisation directe Gérant / PDG</p>
         </div>
-        <button type="button" class="btn-secondary btn-sm" (click)="dialogFarineOuvert.set(true)">
-          🌾 + Enregistrer une entrée
+        <button type="button" class="btn-secondary btn-sm" (click)="dialogFarineOuvert.set(true)" style="display: inline-flex; align-items: center; gap: 4px">
+          <span class="material-symbols-outlined" style="font-size: 1rem">grain</span>
+          + Enregistrer une entrée
         </button>
       </div>
 
@@ -189,7 +235,7 @@
               <th>Quantité reçue</th>
               <th>Fournisseur / Meunerie</th>
               <th class="num">Montant total</th>
-              <th>Ajouté par (Auteur & Rôle)</th>
+              <th>Ajouté par (Auteur &amp; Rôle)</th>
               <th>Remarques</th>
             </tr>
           </thead>
@@ -215,11 +261,13 @@
                 <td>
                   @if (a.auteurRole === 'PDG') {
                     <span class="badge" style="background: #FEF3C7; color: #92400E; border: 1px solid #FCD34D; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                      👑 {{ a.auteurNom || 'PDG' }} (PDG)
+                      <span class="material-symbols-outlined" style="font-size: 0.95rem">verified_user</span>
+                      {{ a.auteurNom || 'PDG' }} (PDG)
                     </span>
                   } @else {
                     <span class="badge" style="background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                      👨‍🍳 {{ a.auteurNom || 'Gérant' }} (Gérant)
+                      <span class="material-symbols-outlined" style="font-size: 0.95rem">person</span>
+                      {{ a.auteurNom || 'Gérant' }} (Gérant)
                     </span>
                   }
                 </td>
@@ -228,6 +276,106 @@
             } @empty {
               <tr>
                 <td colspan="6" class="empty">Aucun approvisionnement en farine enregistré pour le moment.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- SUIVI DES INTRANTS & ÉNERGIE DU FOURNIL (LEVURE, SEL, AMÉLIORANT, GAZ) -->
+    <!-- ====================================================================== -->
+    <div class="card" style="margin-top: 1.5rem">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem">
+        <div>
+          <h2 style="font-size: 1.15rem; font-weight: 800; color: #2C1810; margin: 0; display: flex; align-items: center; gap: 0.5rem">
+            <span class="material-symbols-outlined" style="font-size: 1.3rem; color: #D97706">inventory_2</span>
+            Réserve des Intrants &amp; Énergie du Fournil
+          </h2>
+          <p class="page-sub" style="margin-top: 0.2rem">
+            Suivez les matières premières indispensables (levure, sel, améliorant, huile, bois/gaz) pour éviter toute rupture de fournée.
+          </p>
+        </div>
+        @if (nbIntrantsEnAlerte() > 0) {
+          <span class="badge badge-warn" style="font-size: 0.8rem; padding: 0.35rem 0.75rem">
+            ⚠️ {{ nbIntrantsEnAlerte() }} intrant(s) en stock bas à réapprovisionner
+          </span>
+        } @else {
+          <span class="badge badge-ok" style="font-size: 0.8rem; padding: 0.35rem 0.75rem">
+            ✅ Tous les intrants du fournil sont en stock suffisant
+          </span>
+        }
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Intrant / Matière première</th>
+              <th class="num">Stock disponible</th>
+              <th class="num">Seuil d'alerte</th>
+              <th>État du stock</th>
+              <th style="text-align: right">Ajustement rapide</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of intrants(); track item.id) {
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700">
+                    <span class="material-symbols-outlined" style="color: #8B5A2B">{{ item.icone }}</span>
+                    <span>{{ item.nom }}</span>
+                  </div>
+                </td>
+                <td class="num">
+                  <strong style="font-size: 0.95rem">{{ item.quantite }}</strong>
+                  <span class="field-hint"> {{ item.unite }}</span>
+                </td>
+                <td class="num" style="color: #6B7280">{{ item.seuilAlerte }} {{ item.unite }}</td>
+                <td>
+                  @if (item.quantite <= item.seuilAlerte) {
+                    <span class="badge badge-warn" style="display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 0.9rem">warning</span>
+                      Stock bas · À commander
+                    </span>
+                  } @else {
+                    <span class="badge badge-ok" style="display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 0.9rem">check_circle</span>
+                      Stock suffisant
+                    </span>
+                  }
+                </td>
+                <td style="text-align: right">
+                  <div class="actions" style="justify-content: flex-end; gap: 0.35rem">
+                    <button
+                      type="button"
+                      class="btn-secondary btn-sm"
+                      [disabled]="item.quantite <= 0"
+                      (click)="ajusterIntrant(item.id, -1)"
+                      title="Consommer 1 unité au fournil"
+                    >
+                      -1 (Utilisé)
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-primary btn-sm"
+                      (click)="ajusterIntrant(item.id, 1)"
+                      title="Ajouter 1 unité en réserve"
+                    >
+                      +1
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-primary btn-sm"
+                      style="background: #059669; border-color: #059669"
+                      (click)="ajusterIntrant(item.id, 5)"
+                      title="Réapprovisionner 5 unités"
+                    >
+                      +5 (Réappro)
+                    </button>
+                  </div>
+                </td>
               </tr>
             }
           </tbody>
@@ -248,7 +396,10 @@
       <div class="backdrop" (click)="dialogFarineOuvert.set(false)">
         <form class="dialog" (click)="$event.stopPropagation()" (ngSubmit)="enregistrerFarine()">
           <div class="dialog-header">
-            <h2>🌾 Réception de sacs de farine</h2>
+            <h2 style="display: flex; align-items: center; gap: 6px">
+              <span class="material-symbols-outlined" style="font-size: 1.35rem; color: #B45309">grain</span>
+              Réception de sacs de farine
+            </h2>
             <button type="button" class="btn-secondary btn-sm" (click)="dialogFarineOuvert.set(false)">Fermer</button>
           </div>
           <div class="form-grid">
@@ -279,8 +430,9 @@
 
           <!-- Note récapitulative de calcul automatique anti-erreur -->
           <div style="margin: 0.2rem 0 1rem 0; padding: 0.6rem 0.9rem; background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 10px; font-size: 0.82rem; color: #78350F; display: flex; align-items: center; justify-content: space-between;">
-            <span>
-              💡 <strong>Calcul automatique :</strong> {{ nombreSacsFarine || 0 }} sacs × {{ (prixUnitaireFarine || 0) | number }} FCFA
+            <span style="display: inline-flex; align-items: center; gap: 6px">
+              <span class="material-symbols-outlined" style="font-size: 1.1rem; color: #D97706">calculate</span>
+              <strong>Calcul automatique :</strong> {{ nombreSacsFarine || 0 }} sacs × {{ (prixUnitaireFarine || 0) | number }} FCFA
             </span>
             <strong style="font-size: 0.95rem; color: #B45309">
               = {{ montantTotalFarine | number }} FCFA

@@ -15,6 +15,11 @@ export class SidebarComponent {
   protected readonly utilisateur = this.auth.utilisateur;
   protected readonly estSuperAdmin = computed(() => this.auth.aRole('SUPER_ADMIN', 'PDG'));
   protected readonly estAdmin = computed(() => this.auth.aRole('SUPER_ADMIN', 'ADMIN'));
+  protected photoErreur = false;
+
+  protected onPhotoError(): void {
+    this.photoErreur = true;
+  }
 
   protected urlPhoto(photoProfil?: string | null): string | null {
     return resoudreUrlPhoto(photoProfil);

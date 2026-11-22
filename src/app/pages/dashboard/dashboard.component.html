@@ -98,6 +98,67 @@
     </section>
 
     <!-- ====================================================================
+         BARRE D'ACTIONS RAPIDES QUOTIDIENNES (ACCÈS DIRECT EN 1 CLIC)
+         ==================================================================== -->
+    <section class="stats-grid stats-grid-4" style="margin-bottom: 1.15rem">
+      <a
+        routerLink="/productions"
+        class="card"
+        style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1.05rem; cursor: pointer; border: 1.5px solid #FDE68A; background: #FFFBEB"
+      >
+        <div class="stat-icon-wrapper gold" style="width: 40px; height: 40px; border-radius: 10px">
+          <span class="material-symbols-outlined">bakery_dining</span>
+        </div>
+        <div>
+          <div style="font-weight: 800; font-size: 0.88rem; color: #78350F">+ Nouvelle fournée</div>
+          <div style="font-size: 0.73rem; color: #92400E">Pains cuits &amp; stock farine</div>
+        </div>
+      </a>
+
+      <a
+        routerLink="/tournees"
+        class="card"
+        style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1.05rem; cursor: pointer; border: 1.5px solid #BFDBFE; background: #EFF6FF"
+      >
+        <div class="stat-icon-wrapper info" style="width: 40px; height: 40px; border-radius: 10px">
+          <span class="material-symbols-outlined">local_shipping</span>
+        </div>
+        <div>
+          <div style="font-weight: 800; font-size: 0.88rem; color: #1E3A8A">+ Sortie livreur</div>
+          <div style="font-size: 0.73rem; color: #1D4ED8">Départ tournée &amp; retours</div>
+        </div>
+      </a>
+
+      <a
+        routerLink="/commandes"
+        class="card"
+        style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1.05rem; cursor: pointer; border: 1.5px solid #A7F3D0; background: #ECFDF5"
+      >
+        <div class="stat-icon-wrapper ok" style="width: 40px; height: 40px; border-radius: 10px">
+          <span class="material-symbols-outlined">point_of_sale</span>
+        </div>
+        <div>
+          <div style="font-weight: 800; font-size: 0.88rem; color: #065F46">+ Vente caisse &amp; Commande</div>
+          <div style="font-size: 0.73rem; color: #047857">Comptoir &amp; commandes clients</div>
+        </div>
+      </a>
+
+      <a
+        routerLink="/caisse"
+        class="card"
+        style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1.05rem; cursor: pointer; border: 1.5px solid #E5E7EB; background: #FFFFFF"
+      >
+        <div class="stat-icon-wrapper" style="width: 40px; height: 40px; border-radius: 10px">
+          <span class="material-symbols-outlined">account_balance_wallet</span>
+        </div>
+        <div>
+          <div style="font-weight: 800; font-size: 0.88rem; color: #1F2937">+ Caisse &amp; Clôture</div>
+          <div style="font-size: 0.73rem; color: #6B7280">Encaissements, dépenses &amp; pointage</div>
+        </div>
+      </a>
+    </section>
+
+    <!-- ====================================================================
          BLOC 1 : VUE D'ENSEMBLE (DYNAMIQUE DEPUIS LA BASE DE DONNÉES)
          ==================================================================== -->
     <section class="overview-panel">
@@ -111,24 +172,35 @@
           </span>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 0.5rem">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap">
+          <div style="display: inline-flex; border-radius: 9999px; background: #F3F4F6; padding: 2px; border: 1px solid #E5E7EB">
+            <button
+              type="button"
+              (click)="definirAujourdhui()"
+              style="border: none; border-radius: 9999px; padding: 0.25rem 0.65rem; font-size: 0.74rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease"
+              [style.background]="dateSelectionnee() ? '#8B5A2B' : 'transparent'"
+              [style.color]="dateSelectionnee() ? '#FFFFFF' : '#4B5563'"
+            >
+              Aujourd'hui
+            </button>
+            <button
+              type="button"
+              (click)="definirCumulGlobal()"
+              style="border: none; border-radius: 9999px; padding: 0.25rem 0.65rem; font-size: 0.74rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease"
+              [style.background]="!dateSelectionnee() ? '#8B5A2B' : 'transparent'"
+              [style.color]="!dateSelectionnee() ? '#FFFFFF' : '#4B5563'"
+            >
+              Cumul global
+            </button>
+          </div>
+
           <input
             type="date"
             [ngModel]="dateSelectionnee()"
             (ngModelChange)="changerDate($event)"
-            style="padding: 0.28rem 0.6rem; font-size: 0.8rem"
-            title="Filtrer par date"
+            style="padding: 0.25rem 0.55rem; font-size: 0.78rem; border-radius: 8px; border: 1px solid #D1D5DB"
+            title="Choisir une date spécifique"
           />
-          @if (dateSelectionnee()) {
-            <button
-              type="button"
-              class="btn-secondary btn-sm"
-              style="padding: 0.28rem 0.6rem; font-size: 0.76rem"
-              (click)="changerDate('')"
-            >
-              Tout voir
-            </button>
-          }
         </div>
       </div>
 

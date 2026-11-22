@@ -23,13 +23,14 @@ autoUpdater.on('update-downloaded', (info) => {
 });
 
 function createWindow() {
+  const iconFile = process.platform === 'darwin' ? 'icon.png' : 'icon.ico';
   const win = new BrowserWindow({
     width: 1300,
     height: 850,
     minWidth: 1024,
     minHeight: 700,
     title: 'My Bread — Gestion de Boulangerie Artisanale',
-    icon: path.join(__dirname, 'icon.ico'),
+    icon: path.join(__dirname, iconFile),
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: false,

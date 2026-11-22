@@ -144,12 +144,12 @@ export interface Paiement {
 
 export interface PaiementCreationRequest {
   uuid?: string;
-  clientId: number;
+  clientId?: number;
   livraisonId?: number | null;
   tourneeId?: number | null;
   montant: number;
   modePaiement: ModePaiement;
-  remarques: string | null;
+  remarques?: string | null;
 }
 
 export interface ClientSolde {
@@ -256,6 +256,7 @@ export interface CommandeCreationRequest {
   dateLivraisonSouhaitee: string;
   lignes: LigneQuantiteRequest[];
   remarques: string | null;
+  typeCommande?: 'DIRECTE' | 'PRECOMMANDE';
 }
 
 export interface StockDisponible {
@@ -265,6 +266,8 @@ export interface StockDisponible {
   quantiteProduite: number;
   quantiteCommandee: number;
   stockDisponible: number;
+  quantiteRetoursInvendus?: number;
 }
+
 
 

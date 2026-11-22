@@ -5,18 +5,10 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { TourneeClotureDialogComponent } from '../../dialogs/tournee-cloture-dialog.component';
 import { TourneeDialogComponent } from '../../dialogs/tournee-dialog.component';
-import { Client } from '../../models/client.model';
-import {
-  Commande,
-  Livraison,
-  StatutCommande,
-  Tournee,
-} from '../../models/operations.model';
+import { TourneeVersementDialogComponent } from '../../dialogs/tournee-versement-dialog.component';
+import { Tournee } from '../../models/operations.model';
 import { Produit } from '../../models/produit.model';
 import { Utilisateur } from '../../models/utilisateur.model';
-import { ClientService } from '../../services/client.service';
-import { CommandeService } from '../../services/commande.service';
-import { LivraisonService } from '../../services/livraison.service';
 import { messageErreur } from '../../services/message-erreur';
 import { ProduitService } from '../../services/produit.service';
 import { TourneeService } from '../../services/tournee.service';
@@ -24,94 +16,111 @@ import { UtilisateurService } from '../../services/utilisateur.service';
 
 @Component({
   selector: 'app-tournees',
-  imports: [FormsModule,
+  imports: [
+    FormsModule,
     DecimalPipe,
     TourneeDialogComponent,
-    TourneeClotureDialogComponent,],
+    TourneeClotureDialogComponent,
+    TourneeVersementDialogComponent,
+  ],
   templateUrl: './tournees.component.html',
   styleUrl: './tournees.component.css',
 })
 export class TourneesComponent implements OnInit {
   private readonly tourneeService = inject(TourneeService);
-  private readonly livraisonService = inject(LivraisonService);
-  private readonly commandeService = inject(CommandeService);
   private readonly produitService = inject(ProduitService);
-  private readonly clientService = inject(ClientService);
   private readonly utilisateurService = inject(UtilisateurService);
 
   protected readonly tournees = signal<Tournee[]>([]);
-  protected readonly livraisons = signal<Livraison[]>([]);
-  protected readonly commandes = signal<Commande[]>([]);
   protected readonly produits = signal<Produit[]>([]);
-  protected readonly clients = signal<Client[]>([]);
   protected readonly utilisateurs = signal<Utilisateur[]>([]);
   protected readonly dateFiltre = signal(new Date().toISOString().slice(0, 10));
+  protected readonly filtreStatut = signal<'TOUT' | 'EN_COURS' | 'CLOTUREES'>('TOUT');
   protected readonly erreur = signal<string | null>(null);
+  protected readonly succesMessage = signal<string | null>(null);
 
   protected readonly dialogCreation = signal(false);
   protected readonly tourneePourCloture = signal<Tournee | null>(null);
+  protected readonly tourneePourVersement = signal<Tournee | null>(null);
 
-  protected readonly produitsActifs = computed(() =>
-    this.produits().filter((p) => p.actif),
-  );
-  protected readonly clientsActifs = computed(() =>
-    this.clients().filter((c) => c.actif),
-  );
   protected readonly livreursActifs = computed(() =>
     this.utilisateurs().filter(
       (u) =>
         u.role === 'LIVREUR' &&
         u.actif &&
         (!u.poste || u.poste.toLowerCase().includes('livreur')) &&
-        !u.nom.toLowerCase().includes('djelimakan')
+        !u.nom.toLowerCase().includes('djelimakan'),
     ),
   );
 
-  /** Commandes dont le statut est à livrer (VALIDEE, PREPAREE ou EN_ATTENTE) */
-  protected readonly commandesALivrer = computed(() => {
-    return this.commandes().filter(
-      (c) => c.statut === 'VALIDEE' || c.statut === 'PREPAREE' || c.statut === 'EN_ATTENTE',
-    );
-  });
+  protected readonly produitsActifs = computed(() =>
+    this.produits().filter((p) => p.actif),
+  );
 
-  /** Nombre total de pains commandés en attente de livraison */
-  protected readonly totalPainsALivrer = computed(() => {
-    return this.commandesALivrer().reduce(
-      (acc, c) => acc + (c.lignes?.reduce((sum, l) => sum + (l.quantite || 0), 0) || 0),
-      0,
-    );
-  });
-
-  /** Montant total des commandes à livrer */
-  protected readonly totalMontantALivrer = computed(() => {
-    return this.commandesALivrer().reduce((acc, c) => acc + (c.montantTotal || 0), 0);
-  });
-
-  /** Récapitulatif groupé par type de pain pour le chargement des livreurs */
-  protected readonly recapPainsParProduit = computed(() => {
-    const map = new Map<string, number>();
-    for (const c of this.commandesALivrer()) {
-      if (c.lignes) {
-        for (const l of c.lignes) {
-          const nom = l.produitNom || 'Pain';
-          map.set(nom, (map.get(nom) || 0) + (l.quantite || 0));
-        }
-      }
+  protected readonly tourneesFiltrees = computed(() => {
+    const f = this.filtreStatut();
+    if (f === 'EN_COURS') {
+      return this.tournees().filter((t) => t.statut !== 'CLOTUREE');
     }
-    return Array.from(map.entries()).map(([nom, quantite]) => ({ nom, quantite }));
+    if (f === 'CLOTUREES') {
+      return this.tournees().filter((t) => t.statut === 'CLOTUREE');
+    }
+    return this.tournees();
   });
+
+  protected readonly totalLivreursPartis = computed(() => this.tournees().length);
+
+  protected readonly countEnCours = computed(
+    () => this.tournees().filter((t) => t.statut !== 'CLOTUREE').length,
+  );
+
+  protected readonly countCloturees = computed(
+    () => this.tournees().filter((t) => t.statut === 'CLOTUREE').length,
+  );
+
+  protected readonly totalPainsCharges = computed(() =>
+    this.tournees().reduce(
+      (acc, t) =>
+        acc +
+        (t.bilansProduits ?? []).reduce((s, b) => s + (b.quantiteChargee || 0), 0),
+      0,
+    ),
+  );
+
+  protected readonly totalPainsRetournes = computed(() =>
+    this.tournees().reduce(
+      (acc, t) =>
+        acc +
+        (t.bilansProduits ?? []).reduce((s, b) => s + (b.quantiteRetournee || 0), 0),
+      0,
+    ),
+  );
+
+  protected readonly totalPainsVendus = computed(() =>
+    Math.max(0, this.totalPainsCharges() - this.totalPainsRetournes()),
+  );
+
+  protected readonly totalVentesLivreurs = computed(() =>
+    this.tournees().reduce((acc, t) => acc + (t.totalVentes || 0), 0),
+  );
+
+  protected readonly totalEncaisseLivreurs = computed(() =>
+    this.tournees().reduce((acc, t) => acc + (t.totalEncaisse || 0), 0),
+  );
+
+  protected readonly totalResteADevoir = computed(() =>
+    Math.max(0, this.totalVentesLivreurs() - this.totalEncaisseLivreurs()),
+  );
 
   ngOnInit(): void {
     forkJoin({
       produits: this.produitService.lister(),
-      clients: this.clientService.lister(),
       utilisateurs: this.utilisateurService
         .lister()
         .pipe(catchError(() => of([] as Utilisateur[]))),
     }).subscribe({
-      next: ({ produits, clients, utilisateurs }) => {
+      next: ({ produits, utilisateurs }) => {
         this.produits.set(produits);
-        this.clients.set(clients);
         this.utilisateurs.set(utilisateurs);
       },
     });
@@ -123,50 +132,45 @@ export class TourneesComponent implements OnInit {
     this.chargerDonnees();
   }
 
-  protected sommePainsCommande(c: Commande): number {
-    return c.lignes?.reduce((sum, l) => sum + (l.quantite || 0), 0) || 0;
-  }
-
-  protected libelleStatutCommande(statut: StatutCommande): string {
-    switch (statut) {
-      case 'EN_ATTENTE':
-        return 'En attente';
-      case 'VALIDEE':
-      case 'PREPAREE':
-        return 'Validée';
-      case 'LIVREE':
-        return 'Livrée';
-      case 'ANNULEE':
-        return 'Annulée';
-      default:
-        return statut;
-    }
-  }
-
-  protected marquerCommandeLivree(c: Commande): void {
-    this.commandeService.changerStatut(c.id, 'LIVREE').subscribe({
-      next: () => this.chargerDonnees(),
-      error: (err) => this.erreur.set(messageErreur(err)),
-    });
-  }
-
   protected apresAction(): void {
     this.dialogCreation.set(false);
     this.tourneePourCloture.set(null);
+    this.tourneePourVersement.set(null);
+    this.succesMessage.set('Opération enregistrée avec succès et caisse mise à jour.');
     this.chargerDonnees();
+    setTimeout(() => this.succesMessage.set(null), 4000);
   }
 
-  private chargerDonnees(): void {
+  protected libelleCreneau(t: Tournee): string {
+    if (t.remarques?.includes('[Matin]')) return '☀️ Sortie Matin';
+    if (t.remarques?.includes('[Soir]')) return '🌙 Sortie Soir';
+    if (t.remarques?.includes('[Réappro]')) return '⚡ Réapprovisionnement';
+    return 'Sortie journalière';
+  }
+
+  protected couleurCreneau(t: Tournee): { bg: string; color: string; border: string } {
+    if (t.remarques?.includes('[Matin]')) {
+      return { bg: '#FEF3C7', color: '#92400E', border: '#FCD34D' };
+    }
+    if (t.remarques?.includes('[Soir]')) {
+      return { bg: '#EDE9FE', color: '#5B21B6', border: '#C4B5FD' };
+    }
+    if (t.remarques?.includes('[Réappro]')) {
+      return { bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' };
+    }
+    return { bg: '#F3F4F6', color: '#4B5563', border: '#E5E7EB' };
+  }
+
+  protected remarquesSansTag(t: Tournee): string {
+    if (!t.remarques) return '';
+    return t.remarques.replace(/\[(Matin|Soir|Réappro)\]\s*/gi, '').trim();
+  }
+
+  protected chargerDonnees(): void {
     const d = this.dateFiltre() || undefined;
-    forkJoin({
-      tournees: this.tourneeService.lister(d),
-      livraisons: this.livraisonService.lister({ date: d }),
-      commandes: this.commandeService.lister(d).pipe(catchError(() => of([] as Commande[]))),
-    }).subscribe({
-      next: ({ tournees, livraisons, commandes }) => {
+    this.tourneeService.lister(d).subscribe({
+      next: (tournees) => {
         this.tournees.set(tournees);
-        this.livraisons.set(livraisons);
-        this.commandes.set(commandes);
         this.erreur.set(null);
       },
       error: (err) => this.erreur.set(messageErreur(err)),

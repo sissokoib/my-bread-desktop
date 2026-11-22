@@ -53,7 +53,6 @@ import { UtilisateurService } from '../services/utilisateur.service';
             <select id="roleUtilisateur" name="role" [(ngModel)]="role">
               <option value="ADMIN">Gérant (Fournil / Web)</option>
               <option value="PDG">PDG (Direction / Mobile)</option>
-              <option value="LIVREUR">Livreur</option>
             </select>
           </div>
         </div>
@@ -72,8 +71,9 @@ import { UtilisateurService } from '../services/utilisateur.service';
               <option [ngValue]="b.id">{{ b.nom }} ({{ b.telephone }})</option>
             }
           </select>
-          <p style="margin: 0.35rem 0 0 0; font-size: 0.78rem; color: var(--text-secondary)">
-            ⚠️ Les données (fournées, caisse, tournées, stocks de farine) de ce compte seront strictement cantonnées à cette boulangerie.
+          <p style="margin: 0.35rem 0 0 0; font-size: 0.78rem; color: var(--text-secondary); display: flex; align-items: center; gap: 4px">
+            <span class="material-symbols-outlined" style="font-size: 0.95rem; color: #D97706">info</span>
+            Les données (fournées, caisse, tournées, stocks de farine) de ce compte seront strictement cantonnées à cette boulangerie.
           </p>
         </div>
 
@@ -119,7 +119,7 @@ export class UtilisateurDialogComponent implements OnInit {
 
   protected nom = '';
   protected telephone = '';
-  protected role: Role = 'LIVREUR';
+  protected role: Role = 'ADMIN';
   protected boulangerieId: number | null = null;
   protected motDePasse = '';
   protected actif = true;

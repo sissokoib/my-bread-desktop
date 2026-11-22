@@ -1,0 +1,506 @@
+<div class="caisse-container">
+  <!-- EN-TÊTE PRINCIPAL & CONTRÔLE DE DATE -->
+  <header class="caisse-header">
+    <div class="header-titre">
+      <div class="header-icon-wrap">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="4" width="20" height="16" rx="2" />
+          <path d="M7 15h0M2 9.5h20M12 15h5" />
+        </svg>
+      </div>
+      <div>
+        <h1>Caisse & Trésorerie Journalière</h1>
+        <p class="header-desc">
+          Pointage des entrées d'argent (tournées, ventes comptoir) et des sorties (dépenses, salaires)
+        </p>
+      </div>
+    </div>
+
+    <!-- Sélecteur de date journalier -->
+    <div class="date-navigator">
+      <button type="button" class="btn-nav" (click)="changerDate(-1)" title="Jour précédent">
+        ◀
+      </button>
+      <div class="date-input-wrap">
+        <input
+          type="date"
+          [ngModel]="dateSelectionnee()"
+          (ngModelChange)="dateSelectionnee.set($event); chargerDonnees()"
+        />
+      </div>
+      <button type="button" class="btn-nav" (click)="changerDate(1)" title="Jour suivant">
+        ▶
+      </button>
+      <button type="button" class="btn-today" (click)="reinitialiserAujourdhui()">
+        Aujourd'hui
+      </button>
+      @if (caisseCloturee()) {
+        <button
+          type="button"
+          class="btn-today"
+          style="background: #ECFDF5; color: #065F46; border-color: #6EE7B7; font-weight: 800"
+          (click)="deverrouillerJournee()"
+          title="Cliquer pour déverrouiller la journée"
+        >
+          🔒 Clôturée (Déverrouiller)
+        </button>
+      }
+      <button
+        type="button"
+        class="btn-today"
+        style="background: #25D366; color: #FFFFFF; border-color: #16A34A; font-weight: 700"
+        (click)="envoyerRapportWhatsAppPDG()"
+        title="Envoyer le rapport de caisse du jour sur WhatsApp au PDG"
+      >
+        📲 Rapport WhatsApp PDG
+      </button>
+    </div>
+  </header>
+
+  <!-- NOTIFICATIONS ET ERREURS -->
+  @if (notification()) {
+    <div class="alert alert-success">
+      <span class="alert-icon">✓</span>
+      <span>{{ notification() }}</span>
+    </div>
+  }
+  @if (erreur()) {
+    <div class="alert alert-error">
+      <span class="alert-icon">⚠</span>
+      <span>{{ erreur() }}</span>
+    </div>
+  }
+
+  <!-- LES 4 CARTES MÉTRIQUES DE TRÉSORERIE (TAILLE UNIFORMISÉE AVEC LES AUTRES PAGES) -->
+  <section class="stats-grid stats-grid-4">
+    <!-- Solde Net Théorique en Caisse -->
+    <div class="card metric-card card-solde">
+      <div class="metric-top">
+        <span class="metric-label">Solde en caisse (Espèces)</span>
+        <button class="btn-reglage" (click)="ouvrirDialogueAjusterFond()" title="Cliquer pour définir le fond de caisse initial de cette journée">
+          ⚙ Fond : {{ fondDeCaisseMatin() | number }} F ✎
+        </button>
+      </div>
+      <div class="metric-valeur">
+        {{ soldeTheoriqueCaisse() | number }} <span class="unite">FCFA</span>
+      </div>
+      <div class="metric-sub">
+        <span>Fond matin : <strong>{{ fondDeCaisseMatin() | number }} F</strong></span>
+        <span>•</span>
+        <span [class.text-green]="totalEntreesJour() >= totalSortiesJour()" [class.text-red]="totalEntreesJour() < totalSortiesJour()">
+          Flux net : {{ (totalEntreesJour() - totalSortiesJour() > 0 ? '+' : '') }}{{ (totalEntreesJour() - totalSortiesJour()) | number }} F
+        </span>
+      </div>
+    </div>
+
+    <!-- Total Entrées du Jour -->
+    <div class="card metric-card card-entrees">
+      <div class="stat-card-header">
+        <div>
+          <div class="stat-label">Total encaissé (Entrées)</div>
+          <div class="stat-value text-green">+ {{ totalEntreesJour() | number }} FCFA</div>
+        </div>
+        <div class="stat-icon-wrapper ok" title="Entrées de caisse">
+          <span class="material-symbols-outlined">south_west</span>
+        </div>
+      </div>
+      <div class="stat-hint">{{ tournees().length }} tournée(s) versée(s)</div>
+    </div>
+
+    <!-- Total Sorties du Jour -->
+    <div class="card metric-card card-sorties">
+      <div class="stat-card-header">
+        <div>
+          <div class="stat-label">Dépenses &amp; Salaires (Sorties)</div>
+          <div class="stat-value text-red">- {{ totalSortiesJour() | number }} FCFA</div>
+        </div>
+        <div class="stat-icon-wrapper warning" title="Sorties de caisse">
+          <span class="material-symbols-outlined">north_east</span>
+        </div>
+      </div>
+      <div class="stat-hint">{{ depenses().length }} dépense(s) validée(s)</div>
+    </div>
+
+    <!-- Contrôle & Actions -->
+    <div class="card metric-card card-actions-caisse">
+      <div class="stat-label" style="font-weight: 700; margin-bottom: 0.35rem">Contrôle &amp; Actions</div>
+      <div class="action-buttons-stack">
+        <div class="action-buttons-row">
+          <button type="button" class="btn-action-primary" (click)="ouvrirModalEncaissement()">
+            + Encaisser
+          </button>
+          <button type="button" class="btn-action-danger" (click)="modalDepenseOuvert.set(true)">
+            - Dépense
+          </button>
+        </div>
+        <button type="button" class="btn-action-secondary" (click)="modalClotureOuvert.set(true)">
+          🔍 Pointage &amp; Clôture de caisse
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION JOURNAL CHRONOLOGIQUE DE CAISSE -->
+  <section class="journal-section">
+    <div class="journal-header">
+      <div class="journal-header-titre">
+        <h2>Journal des mouvements de caisse</h2>
+        <span class="count-badge">{{ journalFiltre().length }} mouvement(s)</span>
+      </div>
+
+      <div class="journal-actions">
+        <!-- Filtre Entrée / Sortie -->
+        <div class="filtre-groupe">
+          <button
+            type="button"
+            class="btn-filtre"
+            [class.active]="filtreType() === 'TOUT'"
+            (click)="filtreType.set('TOUT'); pageCourante.set(1)"
+          >
+            Tous ({{ journalMouvements().length }})
+          </button>
+          <button
+            type="button"
+            class="btn-filtre btn-filtre-green"
+            [class.active]="filtreType() === 'ENTREE'"
+            (click)="filtreType.set('ENTREE'); pageCourante.set(1)"
+          >
+            Entrées
+          </button>
+          <button
+            type="button"
+            class="btn-filtre btn-filtre-red"
+            [class.active]="filtreType() === 'SORTIE'"
+            (click)="filtreType.set('SORTIE'); pageCourante.set(1)"
+          >
+            Sorties
+          </button>
+        </div>
+
+        <input
+          type="search"
+          class="journal-search"
+          placeholder="Rechercher (ex: Moussa, Farine, 50000)…"
+          [ngModel]="rechercheJournal()"
+          (ngModelChange)="rechercheJournal.set($event); pageCourante.set(1)"
+        />
+
+        <button type="button" class="btn-imprimer" (click)="imprimerJournal()" title="Imprimer le ticket journalier de caisse">
+          🖨 Imprimer
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLE DU JOURNAL -->
+    <div class="table-container">
+      <table class="table-journal">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Heure / Date</th>
+            <th>Origine & Catégorie</th>
+            <th>Description & Motif</th>
+            <th>Intervenant</th>
+            <th>Mode</th>
+            <th class="text-right">Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (chargement()) {
+            <tr>
+              <td colspan="7" class="text-center py-4">
+                <em>Chargement des mouvements de la caisse…</em>
+              </td>
+            </tr>
+          } @else if (journalFiltre().length === 0) {
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                Aucun mouvement de caisse enregistré pour cette date.
+              </td>
+            </tr>
+          } @else {
+            @for (m of journalPagine(); track m.id) {
+              <tr [class.row-entree]="m.type === 'ENTREE'" [class.row-sortie]="m.type === 'SORTIE'">
+                <td>
+                  @if (m.type === 'ENTREE') {
+                    <span class="tag tag-entree">ENTRÉE</span>
+                  } @else {
+                    <span class="tag tag-sortie">SORTIE</span>
+                  }
+                </td>
+                <td class="font-mono text-muted">{{ m.dateHeure }}</td>
+                <td>
+                  <strong>{{ m.categorie }}</strong>
+                </td>
+                <td class="td-libelle">{{ m.libelle }}</td>
+                <td>
+                  <span class="badge-intervenant">{{ m.intervenant || 'Comptoir' }}</span>
+                </td>
+                <td>
+                  <span class="badge-mode">{{ m.modePaiement }}</span>
+                </td>
+                <td class="text-right font-bold">
+                  @if (m.type === 'ENTREE') {
+                    <span class="montant-entree">+ {{ m.montant | number }} F</span>
+                  } @else {
+                    <span class="montant-sortie">- {{ m.montant | number }} F</span>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- BARRE DE PAGINATION (10 éléments par page) -->
+    @if (journalFiltre().length > 0) {
+      <div class="journal-pagination">
+        <div class="pagination-info">
+          Affichage de <strong>{{ indexDebutPagine() }}</strong> à <strong>{{ indexFinPagine() }}</strong> sur <strong>{{ journalFiltre().length }}</strong> mouvement(s)
+        </div>
+
+        <div class="pagination-controls">
+          <button
+            type="button"
+            class="btn-page"
+            [disabled]="pageCourante() === 1"
+            (click)="pagePrecedente()"
+            title="Page précédente"
+          >
+            ◀ Précédent
+          </button>
+
+          <span class="page-badge">
+            {{ pageCourante() }} / {{ totalPages() }}
+          </span>
+
+          <button
+            type="button"
+            class="btn-page"
+            [disabled]="pageCourante() >= totalPages()"
+            (click)="pageSuivante()"
+            title="Page suivante"
+          >
+            Suivant ▶
+          </button>
+        </div>
+      </div>
+    }
+  </section>
+</div>
+
+<!-- ======================================================================= -->
+<!-- MODAL 1 : ENCAISSEMENT DIRECT (VENTE COMPTOIR OU VERSEMENT LIVREUR)    -->
+<!-- ======================================================================= -->
+@if (modalEncaissementOuvert()) {
+  <div class="backdrop" (click)="modalEncaissementOuvert.set(false)">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <div>
+          <h2>Encaisser des espèces</h2>
+          <p class="dialog-subtitle">Entrée directe d'argent dans le tiroir-caisse</p>
+        </div>
+        <button type="button" class="btn-secondary btn-sm" (click)="modalEncaissementOuvert.set(false)">Fermer</button>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Type d'encaissement *</label>
+          <select [(ngModel)]="formEncaissement.type">
+            <option value="VERSEMENT_LIVREUR">Versement d'un livreur (retour / avance / dette)</option>
+            <option value="VENTE_COMPTOIR">Vente directe à la caisse (Boutique fournil)</option>
+            <option value="LIQUIDATION_INVENDUS">Liquidation d'invendus / pains rassis (prix réduit)</option>
+            <option value="AUTRE">Autre apport en caisse</option>
+          </select>
+        </div>
+
+        @if (formEncaissement.type === 'VERSEMENT_LIVREUR') {
+          <div class="field">
+            <label>Livreur concerné *</label>
+            <select [(ngModel)]="formEncaissement.livreurId">
+              @for (l of livreurs(); track l.id) {
+                <option [ngValue]="l.id">{{ l.nom }} ({{ l.telephone }})</option>
+              }
+            </select>
+          </div>
+        }
+
+        <div class="field">
+          <label>Montant encaissé (FCFA) *</label>
+          <input
+            type="number"
+            min="100"
+            step="100"
+            placeholder="Ex. 45000"
+            [(ngModel)]="formEncaissement.montant"
+          />
+        </div>
+
+        <div class="field">
+          <label>Mode de versement *</label>
+          <select [(ngModel)]="formEncaissement.modePaiement">
+            <option value="ESPECES">Espèces (Billets & Pièces au tiroir)</option>
+            <option value="ORANGE_MONEY">Orange Money</option>
+            <option value="MOOV_MONEY">Moov Money</option>
+            <option value="WAVE">Wave</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Commentaire / Référence</label>
+        <input
+          type="text"
+          placeholder="Ex. Versement tournée du matin ou reliquat hier"
+          [(ngModel)]="formEncaissement.libelle"
+        />
+      </div>
+
+      <div class="dialog-footer">
+        <button type="button" class="btn-secondary" (click)="modalEncaissementOuvert.set(false)">Annuler</button>
+        <button type="button" class="btn-primary" (click)="enregistrerEncaissement()">
+          Valider l'encaissement
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ======================================================================= -->
+<!-- MODAL 2 : NOUVELLE DÉPENSE (AVEC GESTION DES SALAIRES & RETARDS)       -->
+<!-- ======================================================================= -->
+@if (modalDepenseOuvert()) {
+  <app-depense-dialog
+    [dateParDefaut]="dateSelectionnee()"
+    (fermer)="modalDepenseOuvert.set(false)"
+    (enregistre)="surDepenseEnregistree($event)"
+  />
+}
+
+<!-- ======================================================================= -->
+<!-- MODAL 3 : POINTAGE & CLÔTURE DE CAISSE (COMPTEUR DE BILLETS / PIÈCES)  -->
+<!-- ======================================================================= -->
+@if (modalClotureOuvert()) {
+  <div class="backdrop" (click)="modalClotureOuvert.set(false)">
+    <div class="dialog dialog-lg" (click)="$event.stopPropagation()">
+      <div class="dialog-header">
+        <div>
+          <h2>Pointage & Clôture de Caisse</h2>
+          <p class="dialog-subtitle">Comptage physique des espèces pour vérifier le tiroir-caisse</p>
+        </div>
+        <button type="button" class="btn-secondary btn-sm" (click)="modalClotureOuvert.set(false)">Fermer</button>
+      </div>
+
+      <!-- Résumé Comparatif -->
+      <div class="pointage-summary">
+        <div class="summary-col">
+          <span class="label">Solde Théorique attendu :</span>
+          <span class="valeur">{{ soldeTheoriqueCaisse() | number }} FCFA</span>
+        </div>
+        <div class="summary-col">
+          <span class="label">Total Espèces comptées :</span>
+          <span class="valeur text-green">{{ totalEspecesComptees() | number }} FCFA</span>
+        </div>
+        <div class="summary-col" [class.col-error]="ecartCaisse() < 0" [class.col-success]="ecartCaisse() >= 0">
+          <span class="label">Écart constaté :</span>
+          <span class="valeur">
+            {{ ecartCaisse() > 0 ? '+' : '' }}{{ ecartCaisse() | number }} FCFA
+            @if (ecartCaisse() === 0) { (Parfait) }
+            @else if (ecartCaisse() < 0) { (Manquant en caisse) }
+            @else { (Surplus en caisse) }
+          </span>
+        </div>
+      </div>
+
+      <!-- Grille des coupures (Billets & Pièces CFA) -->
+      <h3 class="coupures-title">Comptage des coupures (FCFA)</h3>
+      <div class="coupures-grid">
+        <div class="coupure-item">
+          <label>10 000 F :</label>
+          <input type="number" min="0" [ngModel]="coupures().b10000" (ngModelChange)="majCoupure('b10000', $event)" />
+          <span class="total-coupure">{{ (coupures().b10000 * 10000) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>5 000 F :</label>
+          <input type="number" min="0" [ngModel]="coupures().b5000" (ngModelChange)="majCoupure('b5000', $event)" />
+          <span class="total-coupure">{{ (coupures().b5000 * 5000) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>2 000 F :</label>
+          <input type="number" min="0" [ngModel]="coupures().b2000" (ngModelChange)="majCoupure('b2000', $event)" />
+          <span class="total-coupure">{{ (coupures().b2000 * 2000) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>1 000 F :</label>
+          <input type="number" min="0" [ngModel]="coupures().b1000" (ngModelChange)="majCoupure('b1000', $event)" />
+          <span class="total-coupure">{{ (coupures().b1000 * 1000) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>500 F (Billet) :</label>
+          <input type="number" min="0" [ngModel]="coupures().b500" (ngModelChange)="majCoupure('b500', $event)" />
+          <span class="total-coupure">{{ (coupures().b500 * 500) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>500 F (Pièce) :</label>
+          <input type="number" min="0" [ngModel]="coupures().p500" (ngModelChange)="majCoupure('p500', $event)" />
+          <span class="total-coupure">{{ (coupures().p500 * 500) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>250 F (Pièce) :</label>
+          <input type="number" min="0" [ngModel]="coupures().p250" (ngModelChange)="majCoupure('p250', $event)" />
+          <span class="total-coupure">{{ (coupures().p250 * 250) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>200 F (Pièce) :</label>
+          <input type="number" min="0" [ngModel]="coupures().p200" (ngModelChange)="majCoupure('p200', $event)" />
+          <span class="total-coupure">{{ (coupures().p200 * 200) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>100 F (Pièce) :</label>
+          <input type="number" min="0" [ngModel]="coupures().p100" (ngModelChange)="majCoupure('p100', $event)" />
+          <span class="total-coupure">{{ (coupures().p100 * 100) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>50 F (Pièce) :</label>
+          <input type="number" min="0" [ngModel]="coupures().p50" (ngModelChange)="majCoupure('p50', $event)" />
+          <span class="total-coupure">{{ (coupures().p50 * 50) | number }} F</span>
+        </div>
+
+        <div class="coupure-item">
+          <label>25 F (Pièce) :</label>
+          <input type="number" min="0" [ngModel]="coupures().p25" (ngModelChange)="majCoupure('p25', $event)" />
+          <span class="total-coupure">{{ (coupures().p25 * 25) | number }} F</span>
+        </div>
+      </div>
+
+      <div class="dialog-footer" style="flex-wrap: wrap; gap: 0.5rem">
+        <button type="button" class="btn-secondary" (click)="modalClotureOuvert.set(false)">Fermer</button>
+        <button
+          type="button"
+          class="btn-primary"
+          style="background: #25D366; border-color: #16A34A"
+          (click)="envoyerRapportWhatsAppPDG()"
+        >
+          📲 Envoyer rapport WhatsApp au PDG
+        </button>
+        <button
+          type="button"
+          class="btn-primary"
+          (click)="validerEtCloturerJournee()"
+        >
+          🔒 Valider &amp; Clôturer la journée
+        </button>
+      </div>
+    </div>
+  </div>
+}

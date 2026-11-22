@@ -1,1 +1,30 @@
 /* Styles spécifiques à utilisateurs */
+
+/* ---- Rations journalières ---- */
+.ration-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ration-date {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ration-resume {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin: 0.9rem 0;
+  padding: 0.6rem 0.9rem;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: #78350F;
+}

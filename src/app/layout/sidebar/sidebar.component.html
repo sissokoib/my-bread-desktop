@@ -7,29 +7,12 @@
     style="text-decoration: none"
     title="Aller au Tableau de bord"
   >
-    <div class="sidebar-brand-icon" aria-hidden="true">
-      <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
-        <path
-          d="M6 21C6 14.9249 10.9249 10 17 10H19C23.9706 10 28 14.0294 28 19V21H6Z"
-          fill="#F4C542"
-        />
-        <path
-          d="M4 21H28C29.1046 21 30 21.8954 30 23C30 24.1046 29.1046 25 28 25H4C2.89543 25 2 24.1046 2 23C2 21.8954 2.89543 21 4 21Z"
-          fill="#D4A017"
-        />
-        <path
-          d="M12 12L10 16M17 11V15.5M22 12L24 16"
-          stroke="#6F4518"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
-        <path
-          d="M11 6C11 4.5 12.5 3.5 12.5 2M17 6C17 4.5 18.5 3.5 18.5 2M23 6C23 4.5 24.5 3.5 24.5 2"
-          stroke="#FDE68A"
-          stroke-width="1.6"
-          stroke-linecap="round"
-        />
-      </svg>
+    <div class="sidebar-brand-icon" aria-hidden="true" style="overflow: hidden; padding: 0;">
+      <img
+        src="images/logo-my-bread.jpg"
+        alt="Logo My Bread"
+        style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;"
+      />
     </div>
     <div>
       <div class="sidebar-brand-title">My Bread</div>
@@ -46,8 +29,13 @@
       style="text-decoration: none"
     >
       <div class="profile-ring">
-        @if (urlPhoto(u.photoProfil); as srcPhoto) {
-          <img [src]="srcPhoto" [alt]="u.nom" class="profile-avatar-img" />
+        @if (!photoErreur && urlPhoto(u.photoProfil); as srcPhoto) {
+          <img
+            [src]="srcPhoto"
+            [alt]="u.nom"
+            class="profile-avatar-img"
+            (error)="onPhotoError()"
+          />
         } @else {
           <div class="profile-avatar">{{ initiales(u.nom) }}</div>
         }
@@ -123,7 +111,7 @@
         <rect x="8" y="2" width="8" height="4" rx="1" />
         <path d="m9 14 2 2 4-4" />
       </svg>
-      <span>Commandes</span>
+      <span>Commandes clients</span>
     </a>
 
     <a routerLink="/tournees" routerLinkActive="active">
@@ -140,7 +128,7 @@
         <circle cx="5.5" cy="18.5" r="2.5" />
         <circle cx="18.5" cy="18.5" r="2.5" />
       </svg>
-      <span>Pains livrés</span>
+      <span>Sorties livreurs</span>
     </a>
 
     <a routerLink="/bulletins" routerLinkActive="active">
@@ -159,6 +147,21 @@
         <polyline points="10 9 9 9 8 9" />
       </svg>
       <span>Bulletins</span>
+    </a>
+
+    <a routerLink="/caisse" routerLinkActive="active">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <path d="M7 15h0M2 9.5h20M12 15h5" />
+      </svg>
+      <span>Caisse & Trésorerie</span>
     </a>
 
     <a routerLink="/paiements" routerLinkActive="active">

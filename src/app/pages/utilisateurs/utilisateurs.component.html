@@ -2,12 +2,12 @@
       <div>
         <h1>Équipe &amp; Employés</h1>
         <p class="page-sub">
-          Gestion du personnel, salaires (quinzaine / mensuel), rations journalières et retenues sur les gardes manquées
+          Gestion du personnel (employés directs et livreurs), salaires, rations journalières et retenues sur les gardes manquées
         </p>
       </div>
       <div class="actions">
         <button type="button" class="btn-primary" (click)="dialogNouvelEmploye.set(true)">
-          + Nouvel Employé
+          + Nouvel Employé / Livreur
         </button>
       </div>
     </div>
@@ -17,18 +17,18 @@
     }
 
     <!-- Grille des statistiques du personnel et de la paie -->
-    <div class="stats-grid">
+    <div class="stats-grid stats-grid-4">
       <div class="card">
         <div class="stat-card-header">
           <div>
             <div class="stat-label">Total Effectif</div>
-            <div class="stat-value">{{ utilisateurs().length }}</div>
+            <div class="stat-value">{{ membresEquipe().length }}</div>
           </div>
           <div class="stat-icon-wrapper" title="Personnel de la boulangerie">
             <span class="material-symbols-outlined">badge</span>
           </div>
         </div>
-        <div class="stat-hint">{{ nbLivreurs() }} livreur(s) · {{ nbBoulangers() }} employé(s) fournil</div>
+        <div class="stat-hint">{{ nbEmployesDirects() }} employé(s) direct(s) · {{ nbLivreurs() }} livreur(s)</div>
       </div>
 
       <div class="card">
@@ -49,16 +49,16 @@
       <div class="card">
         <div class="stat-card-header">
           <div>
-            <div class="stat-label">Retenues Gardes Manquées</div>
+            <div class="stat-label">Absences &amp; Avances</div>
             <div class="stat-value" style="color: #DC2626">
               -{{ totalDeductionsGlobales() | number }} F
             </div>
           </div>
-          <div class="stat-icon-wrapper warning" title="Total des déductions d'absences">
+          <div class="stat-icon-wrapper warning" title="Total des déductions d'absences et avances">
             <span class="material-symbols-outlined">event_busy</span>
           </div>
         </div>
-        <div class="stat-hint">{{ totalAbsencesGlobales() }} absence(s) déduite(s) automatiquement</div>
+        <div class="stat-hint">{{ totalAbsencesGlobales() }} absence(s) · {{ totalAvancesGlobales() | number }} F d'avances</div>
       </div>
 
       <div class="card">
@@ -73,7 +73,7 @@
             <span class="material-symbols-outlined">account_balance_wallet</span>
           </div>
         </div>
-        <div class="stat-hint">Base déduite des absences constatées</div>
+        <div class="stat-hint">Reste net après déduction des absences et avances</div>
       </div>
     </div>
 
@@ -88,12 +88,10 @@
           style="min-width: 260px"
         />
 
-        <select [ngModel]="roleFiltre()" (ngModelChange)="roleFiltre.set($event)">
-          <option [ngValue]="null">Tous les rôles</option>
-          <option value="LIVREUR">Livreurs &amp; Terrain</option>
-          <option value="EMPLOYE">Employés &amp; Fournil</option>
-          <option value="ADMIN">Gérants (Web)</option>
-          <option value="PDG">PDG (Mobile)</option>
+        <select [ngModel]="typeFiltre()" (ngModelChange)="typeFiltre.set($event)">
+          <option value="TOUS">Tous les types d'employés</option>
+          <option value="DIRECT">Employés directs de la boulangerie</option>
+          <option value="LIVREUR">Livreurs (prestataires externes)</option>
         </select>
       </div>
 
@@ -103,12 +101,12 @@
             <tr>
               <th>Employé &amp; Quartier</th>
               <th>Téléphone</th>
-              <th>Poste / Rôle</th>
-              <th class="num">Salaire de base</th>
-              <th class="num">Ration jour</th>
-              <th>Absences de garde</th>
-              <th class="num">Salaire Net</th>
-              <th style="text-align: right">Actions</th>
+              <th>Type / Poste</th>
+              <th class="num" style="white-space: nowrap">Salaire de base</th>
+              <th class="num" style="white-space: nowrap">Ration jour</th>
+              <th style="white-space: nowrap">Absences de garde</th>
+              <th class="num" style="white-space: nowrap">Salaire Net</th>
+              <th style="text-align: right; white-space: nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -128,13 +126,16 @@
                       @if (u.quartier) {
                         <span
                           style="
-                            display: block;
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
                             font-size: 0.72rem;
                             color: #6B7280;
                             font-weight: 600;
                           "
                         >
-                          📍 {{ u.quartier }}
+                          <span class="material-symbols-outlined" style="font-size: 0.85rem">location_on</span>
+                          {{ u.quartier }}
                         </span>
                       }
                     </div>
@@ -143,73 +144,233 @@
 
                 <td style="font-weight: 600">{{ u.telephone }}</td>
 
-                <td>
-                  <div style="font-weight: 700; color: #374151; font-size: 0.82rem">
-                    {{ u.poste || libelleRole(u.role) }}
-                  </div>
-                  <span class="badge badge-accent" style="font-size: 0.68rem; margin-top: 0.2rem">
-                    {{ libelleRole(u.role) }}
-                  </span>
+                <td style="white-space: nowrap">
+                  @if (estLivreur(u)) {
+                    <span class="badge" style="font-size: 0.72rem; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 0.9rem">local_shipping</span>
+                      Livreur (externe)
+                    </span>
+                  } @else if (estCompteDirection(u)) {
+                    <span class="badge" style="font-size: 0.72rem; background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 0.9rem">manage_accounts</span>
+                      {{ libelleRole(u.role) }}
+                    </span>
+                  } @else {
+                    <span class="badge" style="font-size: 0.72rem; background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 0.9rem">badge</span>
+                      Employé direct
+                    </span>
+                    <div style="font-weight: 700; color: #374151; font-size: 0.78rem; margin-top: 0.25rem">
+                      {{ u.poste && !estPosteIdentiqueAuRole(u.poste, u.role) ? u.poste : libelleRole(u.role) }}
+                    </div>
+                  }
                 </td>
 
-                <td class="num">
-                  <strong style="font-size: 0.9rem">
-                    {{ (u.salaireBase || 0) | number }} FCFA
-                  </strong>
-                  <span
-                    class="badge"
-                    style="display: block; font-size: 0.68rem; margin-top: 0.2rem; background: #F3F4F6; color: #4B5563"
-                  >
-                    {{ u.frequencePaie === 'MENSUEL' ? 'Mensuel' : 'Par quinzaine' }}
-                  </span>
+                <td class="num" style="white-space: nowrap">
+                  @if (estLivreur(u) || estCompteDirection(u)) {
+                    <span style="color: #9CA3AF">—</span>
+                  } @else {
+                    <strong style="font-size: 0.9rem">
+                      {{ (u.salaireBase || 0) | number }} FCFA
+                    </strong>
+                    <div>
+                      <span
+                        style="display: inline-block; font-size: 0.68rem; margin-top: 0.2rem; background: #F3F4F6; color: #4B5563; padding: 2px 7px; border-radius: 6px; font-weight: 600"
+                      >
+                        {{ u.frequencePaie === 'MENSUEL' ? 'Mensuel' : 'Par quinzaine' }}
+                      </span>
+                    </div>
+                  }
                 </td>
 
-                <td class="num">
-                  @if (u.rationJournaliere && u.rationJournaliere > 0) {
+                <td class="num" style="white-space: nowrap">
+                  @if (!estLivreur(u) && !estCompteDirection(u) && u.rationJournaliere && u.rationJournaliere > 0) {
                     <span style="font-weight: 700; color: #D97706">
                       {{ u.rationJournaliere | number }} F/j
                     </span>
                   } @else {
-                    <span style="color: #9CA3AF">-</span>
+                    <span style="color: #9CA3AF">—</span>
                   }
                 </td>
 
-                <td>
-                  @if ((u.nombreAbsences || 0) > 0) {
-                    <span class="badge badge-warn" style="font-size: 0.75rem">
-                      ⚠️ {{ u.nombreAbsences }} absence(s) :
-                      <strong>-{{ (u.totalDeductions || 0) | number }} F</strong>
-                    </span>
+                <td style="white-space: nowrap">
+                  @if (estLivreur(u) || estCompteDirection(u)) {
+                    <span style="color: #9CA3AF; font-size: 0.78rem">—</span>
                   } @else {
-                    <span class="badge badge-ok" style="font-size: 0.72rem">
-                      ✓ Assidu (0 absence)
-                    </span>
+                    <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start">
+                      @if ((u.nombreAbsences || 0) > 0) {
+                        <span class="badge badge-warn" style="font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; padding: 0.2rem 0.55rem">
+                          <span class="material-symbols-outlined" style="font-size: 0.85rem">warning</span>
+                          <span>{{ u.nombreAbsences }} abs. : <strong>-{{ (u.totalDeductions || 0) | number }} F</strong></span>
+                        </span>
+                      } @else {
+                        <span class="badge badge-ok" style="font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; padding: 0.18rem 0.5rem">
+                          <span class="material-symbols-outlined" style="font-size: 0.85rem">check_circle</span>
+                          <span>Assidu (0 absence)</span>
+                        </span>
+                      }
+                      @if (totalAvancesEmploye(u.id) > 0) {
+                        <span class="badge" style="font-size: 0.7rem; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; display: inline-flex; align-items: center; gap: 4px; padding: 0.18rem 0.5rem">
+                          <span class="material-symbols-outlined" style="font-size: 0.85rem">payments</span>
+                          <span>Avances : <strong>-{{ totalAvancesEmploye(u.id) | number }} F</strong></span>
+                        </span>
+                      }
+                    </div>
                   }
                 </td>
 
-                <td class="num">
-                  <strong style="color: #059669; font-size: 0.94rem">
-                    {{ (u.salaireNet !== undefined ? u.salaireNet : u.salaireBase || 0) | number }} FCFA
-                  </strong>
+                <td class="num" style="white-space: nowrap">
+                  @if (estLivreur(u) || estCompteDirection(u)) {
+                    <span style="color: #9CA3AF">—</span>
+                  } @else {
+                    <strong style="color: #059669; font-size: 0.94rem">
+                      {{ salaireNetApresAvances(u) | number }} FCFA
+                    </strong>
+                  }
                 </td>
 
-                <td style="text-align: right">
-                  <div class="actions" style="justify-content: flex-end">
-                    <button
-                      type="button"
-                      class="btn-secondary btn-sm"
-                      style="font-size: 0.75rem; padding: 0.3rem 0.65rem"
-                      (click)="ouvrirAbsence(u)"
-                      title="Noter une garde manquée ou consulter l'historique"
-                    >
-                      🚫 Noter absence
-                    </button>
-                  </div>
+                <td style="text-align: right; white-space: nowrap">
+                  @if (!estLivreur(u) && !estCompteDirection(u)) {
+                    <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.4rem; flex-wrap: nowrap">
+                      <button
+                        type="button"
+                        class="btn-primary btn-sm"
+                        style="font-size: 0.74rem; padding: 0.3rem 0.65rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap"
+                        (click)="ouvrirAvance(u)"
+                        title="Accorder une avance sur salaire ou consulter les acomptes"
+                      >
+                        <span class="material-symbols-outlined" style="font-size: 0.92rem">payments</span>
+                        <span>+ Avance</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-secondary btn-sm"
+                        style="font-size: 0.74rem; padding: 0.3rem 0.65rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap"
+                        (click)="ouvrirAbsence(u)"
+                        title="Noter une garde manquée ou consulter l'historique"
+                      >
+                        <span class="material-symbols-outlined" style="font-size: 0.92rem">event_busy</span>
+                        <span>Absence</span>
+                      </button>
+                    </div>
+                  }
                 </td>
               </tr>
             } @empty {
               <tr>
                 <td colspan="8" class="empty">Aucun employé correspondant.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================================================================== -->
+    <!-- SUIVI DES RATIONS JOURNALIÈRES (repas payés chaque jour)            -->
+    <!-- ================================================================== -->
+    <div class="card" style="margin-top: 1.1rem">
+      <div class="ration-header">
+        <div>
+          <h2 style="margin: 0; font-size: 1.05rem; display: flex; align-items: center; gap: 0.45rem">
+            <span class="material-symbols-outlined" style="color: #D97706">restaurant</span>
+            Rations journalières des employés
+          </h2>
+          <p class="page-sub" style="margin: 0.2rem 0 0 0">
+            Cochez chaque jour les rations remises aux employés directs. Chaque paiement est enregistré comme sortie de caisse.
+          </p>
+        </div>
+        <div class="ration-date">
+          <button type="button" class="btn-secondary btn-sm" (click)="decalerDateRation(-1)" title="Jour précédent">◀</button>
+          <input type="date" [ngModel]="dateRation()" (ngModelChange)="changerDateRation($event)" />
+          <button type="button" class="btn-secondary btn-sm" (click)="decalerDateRation(1)" title="Jour suivant">▶</button>
+        </div>
+      </div>
+
+      @if (messageRation()) {
+        <div class="alert" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; margin-top: 0.75rem">
+          {{ messageRation() }}
+        </div>
+      }
+
+      <div class="ration-resume">
+        <span>
+          <strong>{{ nbRationsPayees() }}</strong> / {{ lignesRation().length }} ration(s) payée(s)
+        </span>
+        <span>Payé : <strong style="color: #059669">{{ totalRationsPayees() | number }} F</strong></span>
+        <span>Reste à payer : <strong style="color: #DC2626">{{ totalRationsRestantes() | number }} F</strong></span>
+        @if (lignesRation().length > nbRationsPayees()) {
+          <button
+            type="button"
+            class="btn-primary btn-sm"
+            style="margin-left: auto"
+            [disabled]="rationEnCours() !== null"
+            (click)="payerToutesRations()"
+          >
+            {{ rationEnCours() === 'TOUS' ? 'Enregistrement…' : 'Tout marquer comme payé' }}
+          </button>
+        }
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Employé</th>
+              <th class="num">Ration du jour</th>
+              <th>Statut</th>
+              <th style="text-align: right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (l of lignesRation(); track l.employe.id) {
+              <tr>
+                <td>
+                  <strong>{{ l.employe.nom }}</strong>
+                  <div class="field-hint">{{ l.employe.telephone }}</div>
+                </td>
+                <td class="num" style="font-weight: 700; color: #D97706">{{ l.montant | number }} F</td>
+                <td>
+                  @if (l.depense) {
+                    <span class="badge badge-ok" style="display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 0.9rem">check_circle</span>
+                      Payée ({{ l.depense.montant | number }} F)
+                    </span>
+                  } @else {
+                    <span class="badge badge-warn" style="display: inline-flex; align-items: center; gap: 4px">
+                      <span class="material-symbols-outlined" style="font-size: 0.9rem">schedule</span>
+                      Non payée
+                    </span>
+                  }
+                </td>
+                <td style="text-align: right">
+                  @if (l.depense) {
+                    <button
+                      type="button"
+                      class="btn-secondary btn-sm"
+                      [disabled]="rationEnCours() !== null"
+                      (click)="annulerRation(l)"
+                    >
+                      Annuler
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn-primary btn-sm"
+                      style="background: #059669; border-color: #059669"
+                      [disabled]="rationEnCours() !== null"
+                      (click)="payerRation(l)"
+                    >
+                      {{ rationEnCours() === l.employe.id ? 'Enregistrement…' : 'Marquer payée' }}
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="empty">
+                  Aucun employé direct avec une ration journalière définie.
+                </td>
               </tr>
             }
           </tbody>
@@ -232,4 +393,101 @@
         (fermer)="employePourAbsence.set(null)"
         (actualiser)="charger()"
       />
+    }
+
+    <!-- Modal d'avance sur salaire / acompte employé -->
+    @if (employePourAvance(); as empAv) {
+      <div class="backdrop" (click)="employePourAvance.set(null)">
+        <div class="dialog" style="max-width: 540px; width: 95%" (click)="$event.stopPropagation()">
+          <div class="dialog-header">
+            <div>
+              <h2>Avances sur salaire · {{ empAv.nom }}</h2>
+              <p class="page-sub">
+                Chaque avance est enregistrée en sortie de caisse et déduite automatiquement du salaire net.
+              </p>
+            </div>
+            <button type="button" class="btn-secondary btn-sm" (click)="employePourAvance.set(null)">Fermer</button>
+          </div>
+
+          <div style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; font-size: 0.82rem">
+            <div>
+              <span style="color: #92400E">Salaire de base :</span>
+              <div style="font-weight: 800; color: #1F2937">{{ (empAv.salaireBase || 0) | number }} F</div>
+            </div>
+            <div>
+              <span style="color: #92400E">Avances prises :</span>
+              <div style="font-weight: 800; color: #DC2626">-{{ totalAvancesEmploye(empAv.id) | number }} F</div>
+            </div>
+            <div>
+              <span style="color: #92400E">Reste net à payer :</span>
+              <div style="font-weight: 800; color: #059669">{{ salaireNetApresAvances(empAv) | number }} F</div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Montant de l'avance (FCFA) *</label>
+              <input
+                type="number"
+                min="500"
+                step="500"
+                [ngModel]="montantNouvelleAvance()"
+                (ngModelChange)="montantNouvelleAvance.set($event)"
+                placeholder="Ex: 10000"
+              />
+            </div>
+            <div class="field">
+              <label>Date *</label>
+              <input
+                type="date"
+                [ngModel]="dateNouvelleAvance()"
+                (ngModelChange)="dateNouvelleAvance.set($event)"
+              />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Motif / Note (optionnel)</label>
+            <input
+              type="text"
+              [ngModel]="motifNouvelleAvance()"
+              (ngModelChange)="motifNouvelleAvance.set($event)"
+              placeholder="Ex: Acompte milieu de quinzaine, urgence familiale…"
+            />
+          </div>
+
+          <div class="dialog-footer" style="margin-bottom: 1rem">
+            <button
+              type="button"
+              class="btn-primary"
+              [disabled]="avanceEnCours() || !montantNouvelleAvance() || (montantNouvelleAvance() || 0) <= 0"
+              (click)="enregistrerAvance()"
+            >
+              {{ avanceEnCours() ? 'Enregistrement…' : 'Accorder l\'avance & Déduire de la caisse' }}
+            </button>
+          </div>
+
+          <!-- Historique des avances de cet employé -->
+          <div style="border-top: 1px solid #E5E7EB; padding-top: 0.75rem">
+            <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem; color: #374151">
+              Historique des avances accordées ({{ avancesEmploye(empAv.id).length }})
+            </div>
+            @for (av of avancesEmploye(empAv.id); track av.id) {
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0.65rem; background: #F9FAFB; border-radius: 8px; margin-bottom: 0.35rem; font-size: 0.82rem">
+                <div>
+                  <strong>{{ av.dateDepense }}</strong> · {{ libelleAvancePropre(av) }}
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.6rem">
+                  <strong style="color: #DC2626">-{{ av.montant | number }} F</strong>
+                  <button type="button" class="btn-danger btn-sm" style="padding: 2px 8px; font-size: 0.72rem" (click)="supprimerAvance(av)">
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            } @empty {
+              <div class="field-hint">Aucune avance enregistrée pour cet employé.</div>
+            }
+          </div>
+        </div>
+      </div>
     }
