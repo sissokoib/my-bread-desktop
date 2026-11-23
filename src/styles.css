@@ -99,6 +99,56 @@ p {
   grid-template-columns: 255px 1fr;
   min-height: 100dvh;
   background: #EFECE6;
+  transition: grid-template-columns 0.22s ease;
+}
+
+.shell.shell-desktop-collapsed {
+  grid-template-columns: 0px 1fr;
+}
+
+.shell.shell-desktop-collapsed app-sidebar {
+  overflow: hidden;
+  width: 0;
+}
+
+.btn-burger-menu {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  border: 1px solid var(--border, #E5E7EB);
+  background: #FFFFFF;
+  color: #6F4518;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.btn-burger-menu:hover {
+  background: #FDF8F3;
+}
+
+.btn-close-drawer {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(253, 230, 138, 0.4);
+  background: rgba(44, 24, 16, 0.35);
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-drawer-backdrop {
+  display: none;
 }
 
 /* Sidebar à gauche avec dégradé marron mélangé au doré (comme la carte MyBread) */
@@ -2161,21 +2211,60 @@ tbody tr:hover {
   }
 }
 
-@media (max-width: 860px) {
-  .shell {
+/* ==========================================================================
+   MODE TABLETTE & TACTILE (<= 1024px) : SIDEBAR EN TIROIR COULISSANT
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .shell,
+  .shell.shell-desktop-collapsed {
     grid-template-columns: 1fr;
+  }
+
+  .sidebar-drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 14, 10, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: 95;
+  }
+
+  app-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 270px !important;
+    z-index: 100;
+    transform: translateX(-105%);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 12px 0 32px rgba(0, 0, 0, 0.28);
+  }
+
+  .shell.shell-mobile-open app-sidebar {
+    transform: translateX(0);
   }
 
   .sidebar {
     position: static;
-    height: auto;
-    padding: 1.2rem;
+    height: 100dvh;
+    padding: 1.15rem 0 1rem 1.15rem;
   }
 
-  .nav a {
-    border-radius: 12px;
+  .btn-close-drawer {
+    display: inline-flex;
   }
 
+  .content-area {
+    padding: 1rem 1.15rem;
+  }
+
+  .topbar {
+    padding: 0.75rem 1.15rem;
+  }
+}
+
+@media (max-width: 640px) {
   .overview-boxes {
     grid-template-columns: 1fr;
   }

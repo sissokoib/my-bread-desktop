@@ -1,0 +1,18 @@
+{
+  "name": "My Bread — Gestion de Boulangerie",
+  "short_name": "My Bread",
+  "description": "Logiciel tactile de gestion de boulangerie (Caisse, Fournées, Tournées, Commandes)",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EFECE6",
+  "theme_color": "#6F4518",
+  "icons": [
+    {
+      "src": "images/logo-my-bread.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, EventEmitter, Output, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { resoudreUrlPhoto } from '../../services/api.config';
 import { AuthService } from '../../services/auth.service';
@@ -13,6 +13,7 @@ export class SidebarComponent {
   private readonly auth = inject(AuthService);
 
   protected readonly utilisateur = this.auth.utilisateur;
+  @Output() readonly fermerMenu = new EventEmitter<void>();
   protected readonly estSuperAdmin = computed(() => this.auth.aRole('SUPER_ADMIN', 'PDG'));
   protected readonly estAdmin = computed(() => this.auth.aRole('SUPER_ADMIN', 'ADMIN'));
   protected photoErreur = false;
