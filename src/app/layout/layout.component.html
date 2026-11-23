@@ -1,11 +1,20 @@
-<div class="shell">
-  <!-- 1. SIDEBAR DÉPARTAGÉE -->
-  <app-sidebar></app-sidebar>
+<div
+  class="shell"
+  [class.shell-mobile-open]="menuMobileOuvert()"
+  [class.shell-desktop-collapsed]="sidebarReplieeDesktop()"
+>
+  <!-- Fond sombre tactile quand le tiroir est ouvert sur Tablette / Mobile -->
+  @if (menuMobileOuvert()) {
+    <div class="sidebar-drawer-backdrop" (click)="fermerMenuMobile()"></div>
+  }
+
+  <!-- 1. SIDEBAR DÉPARTAGÉE (TIROIR TACTILE SUR TABLETTE / MOBILE) -->
+  <app-sidebar (fermerMenu)="fermerMenuMobile()"></app-sidebar>
 
   <!-- 2. CANVAS PRINCIPAL -->
   <div class="main-canvas">
     <!-- HEADER DÉPARTAGÉ -->
-    <app-header></app-header>
+    <app-header (toggleMenu)="basculerSidebar()"></app-header>
 
     <!-- Bandeaux d'état d'abonnement SaaS partagés -->
     @if (abonnementExpire()) {

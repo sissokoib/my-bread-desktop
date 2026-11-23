@@ -1,24 +1,36 @@
 <!-- SIDEBAR DÉPARTAGÉE -->
 <aside class="sidebar">
   <!-- Emblème Boulangerie Artisanale en haut de la sidebar -->
-  <a
-    routerLink="/tableau-de-bord"
-    class="sidebar-brand-banner"
-    style="text-decoration: none"
-    title="Aller au Tableau de bord"
-  >
-    <div class="sidebar-brand-icon" aria-hidden="true" style="overflow: hidden; padding: 0;">
-      <img
-        src="images/logo-my-bread.jpg"
-        alt="Logo My Bread"
-        style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;"
-      />
-    </div>
-    <div>
-      <div class="sidebar-brand-title">My Bread</div>
-      <div class="sidebar-brand-tag">Fournil & Distribution</div>
-    </div>
-  </a>
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-right: 1.15rem; margin-bottom: 0.85rem; gap: 0.5rem">
+    <a
+      routerLink="/tableau-de-bord"
+      class="sidebar-brand-banner"
+      style="text-decoration: none; margin: 0; flex: 1"
+      title="Aller au Tableau de bord"
+      (click)="fermerMenu.emit()"
+    >
+      <div class="sidebar-brand-icon" aria-hidden="true" style="overflow: hidden; padding: 0;">
+        <img
+          src="images/logo-my-bread.jpg"
+          alt="Logo My Bread"
+          style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;"
+        />
+      </div>
+      <div>
+        <div class="sidebar-brand-title">My Bread</div>
+        <div class="sidebar-brand-tag">Fournil & Distribution</div>
+      </div>
+    </a>
+    <button
+      type="button"
+      class="btn-close-drawer"
+      (click)="fermerMenu.emit()"
+      title="Fermer le menu"
+      aria-label="Fermer le menu"
+    >
+      ✕
+    </button>
+  </div>
 
   <!-- Profil utilisateur centré (cliquable vers /profil avec photo de profil) -->
   @if (utilisateur(); as u) {

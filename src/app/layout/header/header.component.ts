@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
@@ -32,6 +32,7 @@ export class HeaderComponent implements OnInit {
   private readonly tourneeService = inject(TourneeService);
 
   protected readonly utilisateur = this.auth.utilisateur;
+  @Output() readonly toggleMenu = new EventEmitter<void>();
   protected termeRecherche = '';
   protected readonly photoErreur = signal(false);
   protected readonly menuAlertesOuvert = signal(false);

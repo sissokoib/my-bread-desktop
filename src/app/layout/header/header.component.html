@@ -1,6 +1,15 @@
-<!-- HEADER PARTAGÉ (TOPBAR) -->
+<!-- HEADER PARTAGÉ (TOPBAR COMPATIBLE TABLETTE & TACTILE) -->
 <header class="topbar">
-  <div style="display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap">
+  <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap">
+    <button
+      type="button"
+      class="btn-burger-menu"
+      (click)="toggleMenu.emit()"
+      title="Ouvrir / Masquer le menu principal"
+      aria-label="Menu principal"
+    >
+      <span class="material-symbols-outlined" style="font-size: 1.45rem">menu</span>
+    </button>
     <div class="topbar-welcome">
       Bienvenue {{ utilisateur()?.nom || 'Gérant' }} !
     </div>
